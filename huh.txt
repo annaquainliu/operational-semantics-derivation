@@ -1,0 +1,49 @@
+ //evaluate e1 first
+    // let premises = InfRule.p;
+
+    // for (let i = 0; i < premises.length; i++) {
+    //     let currPremise = premises[i];
+    //     let result;
+    //     if (currPremise.includes("JUDGE")) {
+    //         //1
+    //         let expIndex = parseInt(currPremise.split(',')[0].slice(-1));
+    //         currPremise = currPremise.replaceAll("e_" + expIndex, exp[expIndex - 1]);
+    //         premises[i] = currPremise;
+    //         result = interpret(exp[expIndex - 1]); //recursive
+    //     } else {
+    //         result = evalPremise(currPremise);
+    //     }   
+    // }
+    //judgements will use the bindings to get vals, dw
+
+/*
+    branchRules(string list : exp) -> {p : "...", j : "..."} (inference rule)
+
+    This function evaluates to the correct inference rule if 
+    the keyword can lead to multiple possible inference rules.
+ */
+// function branchRules(exp, ksee, rho) { 
+
+//     let keywordExp = exp[0];
+
+//     if (inferenceRules[exp[0]] == null) {
+//         keywordExp = "var";
+//     }   
+//     //formalvar or globalvar, always check formals first since
+//     //formals shadow globals
+//     if (keywordExp == "var" || keywordExp == 'set') {
+//         if (rho.find((v, i) => v == exp[0]) != null) {
+//             return inferenceRules[keywordExp][0];
+//         } else if (ksee.find((v, i) => v == exp[0]) != null) {
+//             return inferenceRules[keywordExp][1];
+//         }
+//     }
+//     //the inference rule for if will be determined once condition is
+//     //recursively evaluated
+//     if (keywordExp == 'if') {
+//         return inferenceRules['if'][0]; //assume ifTrue
+//     } 
+
+
+//     return null;
+// }

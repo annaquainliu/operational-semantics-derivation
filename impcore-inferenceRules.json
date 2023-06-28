@@ -1,0 +1,6 @@
+{
+    "if":  "/inferrule*[Right=/textsc{If}]{/state{e_1}{/xi}{/phi}{/rho} /Downarrow /state{v_1}{/xi}{/phi}{/rho} /and v_1 ?= 0 /and /state{e_r}{/xi}{/phi}{/rho} /Downarrow /state{v_r}{/xi}{/phi}{/rho}}{/state{/text{IF}(e_1, e_2, e_3)}{/xi}{/phi}{/rho} /Downarrow  /state{v_r}{/xi}{/phi}{/rho}}",
+    "set": "/inferrule*[Right=/textsc{Assign}]{Scope /and /state{e}{/xi}{/phi}{/rho} /Downarrow /state{v}{/xi}{/phi}{/rho}}{/state{/text{SET}(x, e)}{/xi}{/phi}{/rho} /Downarrow /state{v}{/xi}{/phi}{/rho}}",
+    "var": "/inferrule*[Right=/textsc{Var}]{x /in dom env}{/state{/textsc{var}(x)}{/xi}{/phi}{/rho}/Downarrow/state{env(x)}{/xi}{/phi}{/rho}}",
+    "literal": "/inferrule*[Right=/textsc{Literal}]{/ }{/state{/textsc{literal}(v)}{/xi}{/phi}{/rho}/Downarrow/state{v}{/xi}{/phi}{/rho}}"
+}
