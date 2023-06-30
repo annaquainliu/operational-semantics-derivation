@@ -6,7 +6,7 @@ const latexOutput = document.getElementById("latex");
 
 let xi = {};
 let rho = {};
-//rho always shadows xi, order matters
+
 let inferenceRules;
 let Queue = [];
 
@@ -19,37 +19,26 @@ window.onload = () => {
 button.addEventListener('click', () => {
     xi = addVariables(xiInput.value);
     rho = addVariables(rhoInput.value);
-    console.log(xi, rho);
-    if (input.value == "" || input.value == null || input.value[0] != "(" || input.value[input.value.length - 1] != ")") {
+    let value = input.value.toLowerCase();
+    if (value == "" || value == null) {
         alert("Ill-formed Impcore expression");
         return;
     }
-    input.value = input.value.toLowerCase();
-    interpretStack.push(input.value);
-    const derivation = derive();
+    addValuesToQueue(value);
+    const derivation = derive(Queue.pop());
     console.log("derivation is", derivation);
     latexOutput.innerText = derivation.derivation;
 });
 
-function derive() {
-    try {
-        while (!interpretStack.length == 0) {
-            let exp = interpretStack.pop();
-            console.log("exp is", `'${exp}'`);
-            if (exp.startsWith("(")) {
-                pushComponents(exp);
-            } else { //must be root 
-                interpret(exp);
-            }
-        }
-        return derivedStack.pop();
-    } catch(error) {
-        return error;
-    }
+function addValuesToQueue(input) {
+    input = input.replaceAll("(", "");
+    input = input.replaceAll(")", "");
+    Queue = input.split(" ").reverse();
+    console.log("queue is ", Queue);
 }
 
 function addVariables(input) {
-    console.log(input);
+    // console.log(input);
     let env = {};
     let vars = input.split(',');
     for (let i = 0; i < vars.length; i++) {
@@ -60,34 +49,14 @@ function addVariables(input) {
     return env;
 }
 
-function pushComponents(input) {
-    let currentExp = "";
-    for (let i = 0; i < input.length; i++) {
-        if (input[i] == "(") {
-            currentExp = "";
-        } 
-        else if (input[i] == " " || input[i] == ")" ) {
-            if (currentExp != "") {
-                interpretStack.push(currentExp);
-            }
-            currentExp = "";
-        } 
-        else {
-            currentExp += input[i];
-        }
-    }
-    return input;
-}
+function derive(exp) {
 
-function interpret(input) {
-    //if it is a literal
-    if (/^\d+$/.test(input)) {
-        console.log(input, "is a literal");
-        LIT(parseInt(input));
+    if (/^\d+$/.test(exp)) {
+        LIT(parseInt(exp));
         return;
     }
    
-    switch (input) {
+    switch (exp) {
         case "if":
             IF();
             break;
@@ -97,10 +66,9 @@ function interpret(input) {
         // case "begin":
         //     return BEGIN();
         default:
-           VAR(input);
+           VAR(exp);
     }
 }
-
 
 function searchEnv(variable, env) {
     for (const key in env) {
@@ -123,18 +91,18 @@ function findEnv(variable) {
     
 }
 
-function LIT(input) {
+function LIT(number) {
     let derivation = inferenceRules.literal;
-    derivation = derivation.replaceAll("$v", input);
-    derivedStack.push({ "syntax" : `Literal(${input})`, 
-                        "value" : input,
-                        "derivation" : derivation});
+    derivation = derivation.replaceAll("$v", number);
+    return {"syntax" : `Literal(${number})`, 
+            "value" : number,
+            "derivation" : derivation};
 }
 
-function VAR(input) {
-    let variable = findEnv(input);
+function VAR(name) {
+    let variable = findEnv(name);
     let derivation = inferenceRules.var;
-    derivation = derivation.replaceAll("$x", input);
+    derivation = derivation.replaceAll("$x", name);
     if (variable.env == "rho") {
         derivation = derivation.replace("{Var}", "{FormalVar}");
         derivation = derivation.replaceAll("$env", "\\rho");
@@ -143,41 +111,36 @@ function VAR(input) {
         derivation = derivation.replaceAll("$env", "\\xi");
     }
 
-    derivedStack.push({"syntax" : `Var(${input})`, 
-                       "value" : variable.value, 
-                       "derivation" : derivation,
-                       "variable" : input});
-}
-
-function SET() {
-
+    return {"syntax" : `Var(${input})`, 
+            "value" : variable.value, 
+            "derivation" : derivation,
+            "name" : name};
 }
 
 function IF() {
-    const condition = derivedStack.pop();
-    const trueCase = derivedStack.pop();
-    const falseCase = derivedStack.pop();
-
+    const condition = derive(Queue.pop());
+    const trueCase = derive(Queue.pop());
+    const falseCase = derive(Queue.pop());
     let derivation = inferenceRules.if;
     let syntax = "If(e_1, e_2, e_3)";
     let value;
+
+    function editDerivation(title, equal, branch) {
+        derivation = derivation.replace("{If}", title);
+        derivation = derivation.replace("?=", equal);
+        derivation = derivation.replace("$eval_result", branch.derivation);
+        derivation = derivation.replace("$v_r", branch.value);
+    }
     if (condition.value == 0) {
-        derivation = derivation.replace("{If}", "{IfFalse}");
-        derivation = derivation.replace("?=", "=");
-        derivation = derivation.replace("$eval_result", falseCase.derivation);
-        value = falseCase.value;
+        editDerivation("{IfFalse}", "=", falseCase);
     } else {
-        derivation = derivation.replace("{If}", "{IfTrue}");
-        derivation = derivation.replace("?=", "\\neq");
-        derivation = derivation.replace("$eval_result", trueCase.derivation);
-        value = trueCase.value;
+       editDerivation("{IfTrue}", "\\neq", trueCase);
     }
     derivation = derivation.replace("$v_1", condition.value);
-    derivation = derivation.replace("$v_r", value);
     derivation = derivation.replace("$eval_cond", condition.derivation);
     syntax = syntax.replace("e_1", condition.syntax);
     syntax = syntax.replace("e_2", trueCase.syntax);
     syntax = syntax.replace("e_3", falseCase.syntax);
     derivation = derivation.replace("$syntax", syntax);
-    derivedStack.push({"syntax" : syntax, "value" : value, "derivation" : derivation});
+    return {"syntax" : syntax, "value" : value, "derivation" : derivation};
 }
