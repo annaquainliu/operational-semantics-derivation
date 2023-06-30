@@ -25,7 +25,7 @@ button.addEventListener('click', () => {
         return;
     }
     addValuesToQueue(value);
-    const derivation = derive(Queue.pop());
+    const derivation = derive(Queue.pop(), true);
     console.log("derivation is", derivation);
     latexOutput.innerText = derivation.derivation;
 });
@@ -49,24 +49,22 @@ function addVariables(input) {
     return env;
 }
 
-function derive(exp) {
+function derive(exp, execute) {
 
     if (/^\d+$/.test(exp)) {
-        LIT(parseInt(exp));
-        return;
+        return LIT(parseInt(exp));
     }
    
     switch (exp) {
         case "if":
-            IF();
-            break;
-        // case "set":
-        //     SET();
+            return IF(execute);
+        case "set":
+            return SET(execute);
         //     break;
         // case "begin":
         //     return BEGIN();
         default:
-           VAR(exp);
+           return VAR(exp);
     }
 }
 
@@ -79,8 +77,9 @@ function searchEnv(variable, env) {
     return null;
 }
 
-function findEnv(variable) {
+function findVarInfo(variable) {
 
+    let environments = {"rho" : rho, "xi" : xi}
     for (const name in environments) {
         let value = searchEnv(variable, environments[name]);
         if (value != null) {
@@ -100,7 +99,7 @@ function LIT(number) {
 }
 
 function VAR(name) {
-    let variable = findEnv(name);
+    let variable = findVarInfo(name);
     let derivation = inferenceRules.var;
     derivation = derivation.replaceAll("$x", name);
     if (variable.env == "rho") {
@@ -111,16 +110,16 @@ function VAR(name) {
         derivation = derivation.replaceAll("$env", "\\xi");
     }
 
-    return {"syntax" : `Var(${input})`, 
+    return {"syntax" : `Var(${name})`, 
             "value" : variable.value, 
             "derivation" : derivation,
             "name" : name};
 }
 
-function IF() {
-    const condition = derive(Queue.pop());
-    const trueCase = derive(Queue.pop());
-    const falseCase = derive(Queue.pop());
+function IF(execute) {
+    const condition = derive(Queue.pop(), execute);
+    const trueCase = derive(Queue.pop(), condition.value != 0 && execute);
+    const falseCase = derive(Queue.pop(), condition.value == 0 && execute);
     let derivation = inferenceRules.if;
     let syntax = "If(e_1, e_2, e_3)";
     let value;
@@ -130,6 +129,7 @@ function IF() {
         derivation = derivation.replace("?=", equal);
         derivation = derivation.replace("$eval_result", branch.derivation);
         derivation = derivation.replace("$v_r", branch.value);
+        value = branch.value;
     }
     if (condition.value == 0) {
         editDerivation("{IfFalse}", "=", falseCase);
@@ -143,4 +143,32 @@ function IF() {
     syntax = syntax.replace("e_3", falseCase.syntax);
     derivation = derivation.replace("$syntax", syntax);
     return {"syntax" : syntax, "value" : value, "derivation" : derivation};
+}
+
+function SET(execute) {
+    const variable = derive(Queue.pop());
+    const exp = derive(Queue.pop());
+    let derivation  = inferenceRules.set;
+    console.log(variable);
+    const env = findVarInfo(variable.name).env;
+    if (execute) {  
+        let environment = {"rho" : rho, "xi" : xi};
+        environment[env][variable.name] = exp.value;
+    }
+    let rho_tick = 0; let xi_tick = 0;
+    if (env == "rho") {
+        derivation = derivation.replace("{Assign}", "{FormalAssign}");
+    } 
+    else {
+        derivation = derivation.replace("{Assign}", "{GlobalAssign}");
+    }
+    derivation = derivation.replace("$Scope", `${variable.name} \\in dom \\${env}`);
+    derivation = derivation.replace("$exp_derivation", exp.derivation);
+    derivation = derivation.replace("$x", variable.syntax);
+    derivation = derivation.replace("$e", exp.syntax);
+    derivation = derivation.replace("$v", exp.value);
+
+    return {"syntax" : `Set(${variable.syntax}, ${exp.syntax})`,
+            "value" : exp.value,
+            "derivation" : derivation}
 }
