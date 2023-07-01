@@ -118,6 +118,10 @@ input:focus{
     margin-top: 10vh;
     text-align: left;
     font-size: 1.5vw;
+    border-radius: 3vw;
+    border: rgb(149, 149, 149) solid 3px;
+    padding: 3vw;
+    margin-bottom: 10vh;
 }
 
 input {

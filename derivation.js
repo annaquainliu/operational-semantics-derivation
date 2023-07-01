@@ -63,6 +63,7 @@ button.addEventListener('click', () => {
         alert("Ill-formed Impcore expression");
         return;
     }
+    Queue = [];
     addValuesToQueue(value);
     console.log(Queue);
     const derivation = derive(Queue.pop(), true, {"rho_ticks" : 0, "xi_ticks" : 0});
