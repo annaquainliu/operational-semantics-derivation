@@ -285,7 +285,7 @@ function BEGIN(exp, execute, ticks) {
     for (let i = 0; i < n_amnt; i++) {
         expression = derive(Queue.pop(), execute, ticks);
         exps_syntax += expression.syntax + ",";
-        exps_derivations += "\\\\\\\\" + expression.derivation;
+        exps_derivations += "  \\\\\\\\ " + expression.derivation;
     }
     derivation = addTicks(derivation, ticks, "_2");
     exps_syntax = exps_syntax.substring(0, exps_syntax.length - 1);
