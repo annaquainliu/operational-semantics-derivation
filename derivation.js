@@ -14,6 +14,7 @@ window.onload = () => {
     fetch('impcore-inferenceRules.json')
     .then(response => response.json())
     .then(result => {inferenceRules = result});
+    document.getElementById("output").style.display = 'none';
 }
 
 button.addEventListener('click', () => {
@@ -29,6 +30,8 @@ button.addEventListener('click', () => {
     const derivation = derive(Queue.pop(), true, {"rho_ticks" : 0, "xi_ticks" : 0});
     console.log("derivation is", derivation);
     latexOutput.innerText = derivation.derivation;
+    window.location.href = "#output";
+    document.getElementById("output").style.display = 'block';
 });
 
 function addValuesToQueue(value) {
