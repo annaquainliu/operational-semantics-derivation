@@ -6,8 +6,7 @@ Made this for pure fun!
 
 # Examples
 Expression : `(if (set x 1) (if y x 45) 99)`
-`ρ = {x -> 1}`
-`ξ = {y = 13}`
+Environments : `ρ = {x -> 1}`, `ξ = {y = 13}`
 
 Latex Output: 
 
