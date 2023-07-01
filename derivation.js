@@ -25,16 +25,61 @@ button.addEventListener('click', () => {
         return;
     }
     addValuesToQueue(value);
+    console.log(Queue);
     const derivation = derive(Queue.pop(), true, {"rho_ticks" : 0, "xi_ticks" : 0});
     console.log("derivation is", derivation);
     latexOutput.innerText = derivation.derivation;
 });
 
-function addValuesToQueue(input) {
-    input = input.replaceAll("(", "");
-    input = input.replaceAll(")", "");
-    Queue = input.split(" ").reverse();
-    console.log("queue is ", Queue);
+function addValuesToQueue(value) {
+    let index = 0;
+    let beginIndexes = [];
+    queueHelper(value, "", null);
+    Queue.reverse();
+
+    function queueHelper(input, string, beginAmount) {
+        while (index < input.length) {
+            if (input[index] == "(") {
+                index++;
+                queueHelper(input, "", null);
+                if (beginAmount != null) {
+                    beginAmount++;
+                }
+            } 
+            else if (input[index] == ")") {
+                if (string != "") {
+                    Queue.push(string);
+                    string = "";
+                    if (beginAmount != null) {
+                        beginAmount++;
+                    }
+                }
+                if (beginAmount != null) {
+                    Queue[beginIndexes.pop()] += beginAmount.toString();
+                }
+                index++;
+                return;
+            } 
+            else if (input[index] == " ") {
+                if (string == "begin") {
+                    beginIndexes.push(Queue.length);
+                    beginAmount = 0;
+                }
+                else if (beginAmount != null && string != "") {
+                    beginAmount++;
+                }
+                if (string != "") {
+                    Queue.push(string);
+                    string = "";
+                }
+                index++;
+            } 
+            else {
+                string += input[index];
+                index++;
+            }
+        }
+    }
 }
 
 function addVariables(input) {
@@ -55,15 +100,15 @@ function derive(exp, execute, ticks) {
     if (/^\d+$/.test(exp)) {
         return LIT(parseInt(exp), ticks);
     }
-   
+    if (exp.startsWith("begin")) {
+        return BEGIN(exp, execute, ticks);
+    }
+
     switch (exp) {
         case "if":
             return IF(execute, ticks);
         case "set":
             return SET(execute, ticks);
-        //     break;
-        // case "begin":
-        //     return BEGIN();
         default:
            return VAR(exp, ticks);
     }
@@ -198,5 +243,31 @@ function SET(execute, ticks) {
 
     return {"syntax" : `Set(${variable.syntax}, ${exp.syntax})`,
             "value" : exp.value,
+            "derivation" : derivation};
+}
+
+function BEGIN(exp, execute, ticks) {
+
+    const n_amnt = parseInt(exp.split("begin")[1]);
+    let exps_syntax = "";
+    let derivation = inferenceRules.begin;
+    let exps_derivations = "";
+    let expression;
+    derivation = addTicks(derivation, ticks, "_1");
+    for (let i = 0; i < n_amnt; i++) {
+        expression = derive(Queue.pop(), execute, ticks);
+        exps_syntax += expression.syntax + ",";
+        exps_derivations += "\\\\\\\\" + expression.derivation;
+    }
+    derivation = addTicks(derivation, ticks, "_2");
+    exps_syntax = exps_syntax.substring(0, exps_syntax.length - 1);
+    let syntax = `Begin(${exps_syntax})`
+    //begin result value is the last expression's value
+    derivation = derivation.replace("$v_r", expression.value); 
+    derivation = derivation.replace("$exps", exps_syntax);
+    derivation = derivation.replace("$derivations", exps_derivations);
+
+    return {"syntax" : syntax,
+            "value" : expression.value,
             "derivation" : derivation};
 }
