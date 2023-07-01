@@ -1,12 +1,12 @@
 # Operational Semantics Derivation Program
 
-This is a website that allows users to input any Impcore expression and receive its full derivation in Latex.
+This program takes in any Impcore expression and receive its full derivation in Latex.
 
 Made this for pure fun!
 
 # Examples
-Expression : `(if (set x 1) (if y x 45) 99)`
-Environments : `ρ = {x -> 1}`, `ξ = {y = 13}`
+Expression : `(if (set x 1) (if y x 45) 99)` \n
+Environments : `ρ = {x -> 1}`, `ξ = {y = 13}` \n
 
 Latex Output: 
 
@@ -24,4 +24,4 @@ Image of Output:
 
 This program does not implement the `while` function in Impcore, as the Latex derivation would be unreadable.
 
-
+Additionally, this program does not allow declaring any functions or the use of any Impcore standard basis functions. 
