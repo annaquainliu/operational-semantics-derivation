@@ -2,6 +2,9 @@
     font-family:monospace;
 }
 
+body {
+    background-color: rgb(255, 255, 255);
+}
 html, body {
     width: 100%;
     margin: 0;
@@ -13,13 +16,20 @@ body > div {
 
 body h1 {
     text-align: center;
-    font-size: 4.5vw;
+    font-size: 3.5vw;
+    font-weight: 400;
+    margin-bottom: 0;
+}
+
+body h2 {
+    text-align: center;
+    font-size: 2vw;
     font-weight: 100;
 }
 
 .environment, .expression, .variables {
     height: 15vh;
-    width: 60%;
+    width: 50%;
     display : flex;
     flex-direction : row;
     align-items: center;
@@ -49,7 +59,7 @@ body h1 {
 .variables input {
     width: 20%;
     height: 80%;
-    font-size: 3vw;
+    font-size: 2vw;
     border: 0;
     border-bottom: solid 1px black;
 }
@@ -85,7 +95,7 @@ button {
 
 .expression > input {
     margin: auto;
-    font-size: 2.5vw;
+    font-size: 2vw;
     background-color: white;
     border-radius: 0;
     border: 0;
@@ -101,9 +111,10 @@ input:focus{
     text-transform: uppercase;
     margin-top: 10vh;
     margin-left: 45%;
+    margin-bottom: 5vh;
     width: 10%;
     height: 10vh;
-    font-size: 2vw;
+    font-size: 1.5vw;
     font-weight: 100;
     background-color: black;
     color: white;
@@ -126,4 +137,22 @@ input:focus{
 
 input {
     text-align: left;
+}
+
+#description {
+    width: 30%;
+    height: 15vh;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    opacity: 0.6;
+}
+
+#latexLogo {
+    height: 100%;
+    width: 30%;
+    background-image: url('latex-logo-png-transparent.png');
+    background-position: center top;
+    background-size: contain;
+    background-repeat: no-repeat;
 }
