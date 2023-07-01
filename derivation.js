@@ -1,8 +1,10 @@
 const input = document.getElementById('input');
 const button  = document.getElementById('derive');
-const xiInput = document.getElementById('xi');
-const rhoInput = document.getElementById('rho');
 const latexOutput = document.getElementById("latex");
+const addVariableButton = document.getElementById("add_variable");
+const selectEnv = document.getElementById("select_env");
+const variableName = document.getElementById("variable_name");
+const variableValue = document.getElementById("variable_value");
 
 let xi = {};
 let rho = {};
@@ -17,9 +19,45 @@ window.onload = () => {
     document.getElementById("output").style.display = 'none';
 }
 
+function isValidName(name) {
+    if (name.startsWith("$")) {
+        return false;
+    }
+    let invalidWords = ['begin', 'if', 'set', 'while', 'var'];
+    for (let i = 0; i < invalidWords.length; i++) {
+        if (invalidWords[i] == name) {
+            alert(`You cannot name your variable '${name}', as it is an Impcore keyword.`);
+            return false;
+        }
+    }
+    return true;
+}
+
+addVariableButton.addEventListener('click', () => {
+    const name = variableName.value.toLowerCase().replaceAll(" ", "");
+    const value = variableValue.value;
+    console.log(name, value);
+    if (name == "" || value == "") {
+        alert("Please fill in the name and the value of the variable");
+        return;
+    }
+    if (!isValidName(name)) {
+        return;
+    }
+    let environments = {"rho" : rho, "xi" : xi};
+    const environment = selectEnv.value;
+    let currentValue = document.getElementById(environment).value;
+    let addOn = "";
+    if (Object.keys(environments[environment]).length == 0) {
+        addOn = `${name} → ${value}}`
+    } else {
+        addOn = `, ${name} → ${value}}`
+    }
+    document.getElementById(environment).value = currentValue.substring(0, currentValue.length - 1) + addOn;
+    environments[environment][name] = parseInt(value);
+});
+
 button.addEventListener('click', () => {
-    xi = addVariables(xiInput.value);
-    rho = addVariables(rhoInput.value);
     let value = input.value.toLowerCase();
     if (value == "" || value == null) {
         alert("Ill-formed Impcore expression");
@@ -84,19 +122,6 @@ function addValuesToQueue(value) {
         }
     }
 }
-
-function addVariables(input) {
-    // console.log(input);
-    let env = {};
-    let vars = input.split(',');
-    for (let i = 0; i < vars.length; i++) {
-        let variable = vars[i].split('=');
-        //change this line later
-        env[variable[0]] = parseInt(variable[1]); 
-    }
-    return env;
-}
-
 // ticks carry the ticks from before
 function derive(exp, execute, ticks) {
 

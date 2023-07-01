@@ -8,23 +8,26 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1 style="text-decoration: underline;">Impcore Deriver in Latex</h1>
+    <h1>Impcore Deriver in Latex</h1>
     <div class="environment">
         <label>ξ</label>
-        <input id="xi">
-        <div class="variable_button">
-            <button>Add Variable</button>
-        </div>
+        <input id="xi" value=" {}">
     </div>
     <div class="environment">
         <label>ρ</label>
-        <input id="rho">
-        <div class="variable_button">
-            <button>Add Variable</button>
-        </div>
+        <input id="rho" value=" {}">
+    </div>
+    <div class="variables">
+        <input placeholder="Name" id="variable_name">
+        <input placeholder="Value" type="number" min="0" id="variable_value">
+        <select id="select_env">
+            <option value="xi">ξ</option>
+            <option value="rho">ρ</option>
+        </select>
+        <button id="add_variable">Add Variable</button>
     </div>
     <div class="expression">
-        <input id="input" placeholder="Type in an Impcore expression!">
+        <input id="input" placeholder="Type in an Impcore expression!" style="text-align: center">
     </div>
     <button id="derive">Derive</button>
     <div id="output">
@@ -46,6 +49,5 @@
         <p>\end{adjustbox}</p>
     </div>
 </body>
-<script src="frontend.js"></script>
 <script src="derivation.js"></script>
 </html>
