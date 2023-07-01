@@ -5,8 +5,9 @@ This program takes in any Impcore expression and receive its full derivation in 
 Made this for pure fun!
 
 # Examples
-Expression : `(if (set x 1) (if y x 45) 99)` \n
-Environments : `ρ = {x -> 1}`, `ξ = {y = 13}` \n
+Expression : `(if (set x 1) (if y x 45) 99)` 
+
+Environments : `ρ = {x -> 1}`, `ξ = {y = 13}`
 
 Latex Output: 
 
