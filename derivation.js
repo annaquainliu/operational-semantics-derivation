@@ -55,21 +55,38 @@ Array.prototype.forEach.call(variables, variableDiv => {
         if (!isValidName(name)) {
             return;
         }
-        let enviroments = {"rho" : rho, "xi" : xi};
-        console.log(env);
         let currentValue = document.getElementById(env).value;
         let addOn = "";
-        if (Object.keys(enviroments[env]).length == 0) {
+        if (currentValue == " {}") {
             addOn = `${name} → ${value}}`
         } else {
             addOn = `, ${name} → ${value}}`
         }
         document.getElementById(env).value = currentValue.substring(0, currentValue.length - 1) + addOn;
-        enviroments[env][nameField.value] = parseInt(valueField.value);
     });
 });
 
+function addVariablesToEnv() {
+    xi = {}; rho = {}; // clear environments
+    let environments = {"xi" : xi, "rho" : rho};
+    ["rho", "xi"].forEach(env => {
+        let variables = document.getElementById(env).value;
+        variables = variables.replaceAll(" ", "");
+        variables = variables.substring(1, variables.length - 1);
+        const maps = variables.split(',');
+        maps.forEach(mapping => {
+            const fields = mapping.split('→');
+            const name = fields[0];
+            const value = fields[1];
+            environments[env][name] = parseInt(value);
+        });
+    });
+    console.log(xi);
+    console.log(rho);
+}
+//derive
 button.addEventListener('click', () => {
+    addVariablesToEnv();
     let value = input.value.toLowerCase();
     if (value == "" || value == null) {
         alert("Ill-formed Impcore expression");
@@ -85,20 +102,11 @@ button.addEventListener('click', () => {
         latexOutput.innerText = derivation.derivation;
         window.location.href = "#output";
         document.getElementById("output").style.display = 'block';
-        clearEnvironments();
     } catch (error) {
         alert(`Improper Impcore expression!`);
         return;
     }
 });
-
-function clearEnvironments() {
-    xi = {};
-    rho = {};
-    ["xi", "rho"].forEach(env => {
-        document.getElementById(env).value = " {}";
-    });
-}
 
 function addValuesToQueue(value) {
     let index = 0;
