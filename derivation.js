@@ -20,7 +20,7 @@ function isValidName(name) {
     if (name.startsWith("$")) {
         return false;
     }
-    let invalidWords = ['begin', 'if', 'set', 'while', 'var'];
+    let invalidWords = ['begin', 'if', 'set', 'while', 'var', '+', '-', "/", "=", "*"];
     for (let i = 0; i < invalidWords.length; i++) {
         if (invalidWords[i] == name) {
             alert(`You cannot name your variable '${name}', as it is an Impcore keyword.`);
@@ -75,6 +75,7 @@ button.addEventListener('click', () => {
         alert("Ill-formed Impcore expression");
         return;
     }
+    //clear queue and the environments
     Queue = [];
     addValuesToQueue(value);
     console.log(Queue);
@@ -84,11 +85,20 @@ button.addEventListener('click', () => {
         latexOutput.innerText = derivation.derivation;
         window.location.href = "#output";
         document.getElementById("output").style.display = 'block';
+        clearEnvironments();
     } catch (error) {
         alert(`Improper Impcore expression!`);
         return;
     }
 });
+
+function clearEnvironments() {
+    xi = {};
+    rho = {};
+    ["xi", "rho"].forEach(env => {
+        document.getElementById(env).value = " {}";
+    });
+}
 
 function addValuesToQueue(value) {
     let index = 0;
@@ -149,12 +159,21 @@ function derive(exp, execute, ticks) {
     if (exp.startsWith("begin")) {
         return BEGIN(exp, execute, ticks);
     }
-
     switch (exp) {
         case "if":
             return IF(execute, ticks);
         case "set":
             return SET(execute, ticks);
+        case "+":
+            return PRIMITIVE(exp, execute, ticks, {name : 'Add', equation : (f, s) => f + s});
+        case "-":
+            return PRIMITIVE(exp, execute, ticks, {name : 'Sub', equation : (f, s) => f - s});
+        case "/":
+            return PRIMITIVE(exp, execute, ticks, {name : 'Div', equation : (f, s) => Math.floor(f / s)});
+        case "*":
+            return PRIMITIVE(exp, execute, ticks, {name : 'Div', equation : (f, s) => f * s});
+        case "=":
+            return EQ(execute, ticks, {name : 'Eq', equation : (f, s) => f == s ? 1 : 0});
         default:
            return VAR(exp, ticks);
     }
@@ -245,7 +264,7 @@ function IF(execute, ticks) {
     if (condition.value == 0) {
         editDerivation("{IfFalse}", "=", falseCase);
     } else {
-       editDerivation("{IfTrue}", "\\neq", trueCase);
+        editDerivation("{IfTrue}", "\\neq", trueCase);
     }
     derivation = derivation.replace("$v_1", condition.value);
     derivation = derivation.replace("$eval_cond", condition.derivation);
@@ -275,7 +294,7 @@ function SET(execute, ticks) {
         else {
             derivation = derivation.replace("{Assign}", "{GlobalAssign}");
         }
-        derivation = derivation.replace(`${env}_2`, `${env}_2\\{${variable.name}\\mapsto${exp.value}\\}`);
+        derivation = derivation.replace(`\\${env}_2`, `\\${env}_2\\{${variable.name}\\mapsto${exp.value}\\}`);
     }
     derivation = addTicks(derivation, ticks, "_2");
     if (execute) {
@@ -302,7 +321,7 @@ function BEGIN(exp, execute, ticks) {
     derivation = addTicks(derivation, ticks, "_1");
     for (let i = 0; i < n_amnt; i++) {
         expression = derive(Queue.pop(), execute, ticks);
-        exps_syntax += expression.syntax + ",";
+        exps_syntax += expression.syntax + ", ";
         exps_derivations += "  \\\\\\\\ " + expression.derivation;
     }
     derivation = addTicks(derivation, ticks, "_2");
@@ -315,5 +334,59 @@ function BEGIN(exp, execute, ticks) {
 
     return {"syntax" : syntax,
             "value" : expression.value,
+            "derivation" : derivation};
+}
+
+function PRIMITIVE(exp, execute, ticks, functionInfo) {
+    let derivation = inferenceRules.applyPrimitive;
+    derivation = addTicks(derivation, ticks, "_1");
+
+    const first = derive(Queue.pop(), execute, ticks);
+    const second = derive(Queue.pop(), execute, ticks);
+    const result = functionInfo.equation(first.value, second.value);
+    derivation = addTicks(derivation, ticks, "_2");
+
+    derivation = derivation.replace("{Apply}", `{Apply${functionInfo.name}}`);
+    derivation = derivation.replaceAll("$f", exp);
+    derivation = derivation.replaceAll("$e_1_derivation", first.derivation);
+    derivation = derivation.replaceAll("$e_2_derivation", second.derivation);
+    derivation = derivation.replaceAll("$v_1", first.value);
+    derivation = derivation.replaceAll("$v_2", second.value);
+    derivation = derivation.replaceAll("$v_r", result);
+    let syntax = `Apply(${exp}, ${first.syntax}, ${second.syntax})`;
+    derivation = derivation.replace("$syntax", syntax);
+
+    return {"syntax" : syntax,
+            "value" : result,
+            "derivation" : derivation};
+}
+
+function EQ(execute, ticks, functionInfo) {
+    let derivation = inferenceRules.applyEq;
+    derivation = addTicks(derivation, ticks, "_1");
+
+    const first = derive(Queue.pop(), execute, ticks);
+    const second = derive(Queue.pop(), execute, ticks);
+    const result = functionInfo.equation(first.value, second.value);
+    derivation = addTicks(derivation, ticks, "_2");
+
+    if (result == 0) {
+        derivation = derivation.replace("{Apply}", "{ApplyEqFalse}");
+        derivation = derivation.replace("?=", "\\neq");
+    } 
+    else {
+        derivation = derivation.replace("{Apply}", "{ApplyEqTrue}");
+        derivation = derivation.replace("?=", "=");
+    }
+    derivation = derivation.replace("$e_1_derivation", first.derivation);
+    derivation = derivation.replace("$e_2_derivation", second.derivation);
+    derivation = derivation.replaceAll("$v_1", first.value);
+    derivation = derivation.replaceAll("$v_2", second.value);
+    derivation = derivation.replace("$v_r", result);
+    let syntax = `Apply(=, ${first.syntax}, ${second.syntax})`;
+    derivation = derivation.replace("$syntax", syntax);
+
+    return {"syntax" : syntax,
+            "value" : result,
             "derivation" : derivation};
 }
