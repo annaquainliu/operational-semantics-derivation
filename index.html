@@ -16,12 +16,28 @@
     <div class="environment">
         <label>ξ</label>
         <input id="xi" value=" {}">
+        <div class="variable" value="xi">
+            <span class="add_variable">+</span>
+            <div class="variable_info">
+                <input placeholder="Name" name="name">
+                <input placeholder="Value" type="number" min="0" name="value">
+                <button>ADD</button>
+            </div>
+        </div>
     </div>
     <div class="environment">
         <label>ρ</label>
         <input id="rho" value=" {}">
+        <div class="variable" value="rho">
+            <span class="add_variable">+</span>
+            <div class="variable_info">
+                <input placeholder="Name" name="name">
+                <input placeholder="Value" type="number" min="0" name="value">
+                <button>ADD</button>
+            </div>
+        </div>
     </div>
-    <div class="variables">
+    <!-- <div class="variables">
         <input placeholder="Name" id="variable_name">
         <input placeholder="Value" type="number" min="0" id="variable_value">
         <select id="select_env">
@@ -29,7 +45,7 @@
             <option value="rho">ρ</option>
         </select>
         <button id="add_variable">Add Variable</button>
-    </div>
+    </div> -->
     <div class="expression">
         <input id="input" placeholder="Type in an Impcore expression!" style="text-align: center">
     </div>

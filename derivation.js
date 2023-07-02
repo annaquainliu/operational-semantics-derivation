@@ -1,10 +1,7 @@
 const input = document.getElementById('input');
 const button  = document.getElementById('derive');
 const latexOutput = document.getElementById("latex");
-const addVariableButton = document.getElementById("add_variable");
-const selectEnv = document.getElementById("select_env");
-const variableName = document.getElementById("variable_name");
-const variableValue = document.getElementById("variable_value");
+const variables = document.getElementsByClassName('variable');
 
 let xi = {};
 let rho = {};
@@ -33,28 +30,43 @@ function isValidName(name) {
     return true;
 }
 
-addVariableButton.addEventListener('click', () => {
-    const name = variableName.value.toLowerCase().replaceAll(" ", "");
-    const value = variableValue.value;
-    console.log(name, value);
-    if (name == "" || value == "") {
-        alert("Please fill in the name and the value of the variable");
-        return;
-    }
-    if (!isValidName(name)) {
-        return;
-    }
-    let environments = {"rho" : rho, "xi" : xi};
-    const environment = selectEnv.value;
-    let currentValue = document.getElementById(environment).value;
-    let addOn = "";
-    if (Object.keys(environments[environment]).length == 0) {
-        addOn = `${name} → ${value}}`
-    } else {
-        addOn = `, ${name} → ${value}}`
-    }
-    document.getElementById(environment).value = currentValue.substring(0, currentValue.length - 1) + addOn;
-    environments[environment][name] = parseInt(value);
+Array.prototype.forEach.call(variables, variableDiv => {
+    const variableInfo = variableDiv.getElementsByClassName('variable_info')[0];
+    const addVariable = variableDiv.getElementsByClassName('add_variable')[0];
+    const button = variableDiv.getElementsByTagName('button')[0];
+    const env = variableDiv.getAttribute('value');
+    const nameField = variableDiv.querySelector("input[name='name']");
+    const valueField = variableDiv.querySelector("input[name='value']");
+
+    addVariable.addEventListener('click', () => {
+        if (variableInfo.style.display == "none") {
+            variableInfo.style.display = "flex";
+        } else {
+            variableInfo.style.display = "none";
+        }
+    });
+    button.addEventListener('click', () => {
+        const name = nameField.value;
+        const value = valueField.value;
+        if (name == "" || value == "") {
+            alert("Please fill in the name and the value of the variable");
+            return;
+        }
+        if (!isValidName(name)) {
+            return;
+        }
+        let enviroments = {"rho" : rho, "xi" : xi};
+        console.log(env);
+        let currentValue = document.getElementById(env).value;
+        let addOn = "";
+        if (Object.keys(enviroments[env]).length == 0) {
+            addOn = `${name} → ${value}}`
+        } else {
+            addOn = `, ${name} → ${value}}`
+        }
+        document.getElementById(env).value = currentValue.substring(0, currentValue.length - 1) + addOn;
+        enviroments[env][nameField.value] = parseInt(valueField.value);
+    });
 });
 
 button.addEventListener('click', () => {
