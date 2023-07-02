@@ -39,7 +39,7 @@ Array.prototype.forEach.call(variables, variableDiv => {
     const valueField = variableDiv.querySelector("input[name='value']");
 
     addVariable.addEventListener('click', () => {
-        if (variableInfo.style.display == "none") {
+        if (variableInfo.style.display == "none" || variableInfo.style.display == "") {
             variableInfo.style.display = "flex";
         } else {
             variableInfo.style.display = "none";
