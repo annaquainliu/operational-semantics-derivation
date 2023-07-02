@@ -66,11 +66,16 @@ button.addEventListener('click', () => {
     Queue = [];
     addValuesToQueue(value);
     console.log(Queue);
-    const derivation = derive(Queue.pop(), true, {"rho_ticks" : 0, "xi_ticks" : 0});
-    console.log("derivation is", derivation);
-    latexOutput.innerText = derivation.derivation;
-    window.location.href = "#output";
-    document.getElementById("output").style.display = 'block';
+    try {
+        const derivation = derive(Queue.pop(), true, {"rho_ticks" : 0, "xi_ticks" : 0});
+        console.log("derivation is", derivation);
+        latexOutput.innerText = derivation.derivation;
+        window.location.href = "#output";
+        document.getElementById("output").style.display = 'block';
+    } catch (error) {
+        alert(`Improper Impcore expression!`);
+        return;
+    }
 });
 
 function addValuesToQueue(value) {
