@@ -4,6 +4,5 @@
     "var": "\\inferrule*[Right=\\textsc{Var}]{$x \\in dom $env}{\\state{\\textsc{Var($x)}}{\\xi_1}{\\phi}{\\rho_1}\\Downarrow\\state{$env($x)}{\\xi_1}{\\phi}{\\rho_1}}",
     "literal": "\\inferrule*[Right=\\textsc{Literal}]{\\ }{\\state{\\textsc{Literal($v)}}{\\xi_1}{\\phi}{\\rho_1}\\Downarrow\\state{$v}{\\xi_1}{\\phi}{\\rho_1}}",
     "begin": "\\inferrule*[Right=\\textsc{Begin}]{$derivations}{\\state{\\textsc{Begin($exps)}}{\\xi_1}{\\phi}{\\rho_1} \\Downarrow \\state{\\textsc{$v_r}}{\\xi_2}{\\phi}{\\rho_2}}",
-    "applyPrimitive": "\\inferrule*[Right=\\textsc{Apply}]{\\phi($f) = \\textsc{Primitive}($f) \\\\\\\\ $e_1_derivation \\\\\\\\ $e_2_derivation \\\\\\\\ -2^{31} \\leq $v_1 $f $v_2 < 2^{31}}{\\state{\\textsc{$syntax}}{\\xi_1}{\\phi}{\\rho_1} \\Downarrow \\state{$v_r}{\\xi_2}{\\phi}{\\rho_2}}",
-    "applyEq" : "\\inferrule*[Right=\\textsc{Apply}]{ \\phi(=) = \\textsc{Primitive}(=) \\\\\\\\ $e_1_derivation \\\\\\\\ $e_2_derivation \\\\\\\\ $v_1 ?= $v_2}{\\state{\\textsc{$syntax}}{\\xi_1}{\\phi}{\\rho_1} \\Downarrow \\state{$v_r}{\\xi_2}{\\phi}{\\rho_2}}"
+    "applyPrimitive": "\\inferrule*[Right=\\textsc{Apply}]{\\phi($f) = \\textsc{Primitive}($f) \\\\\\\\ $e_1_derivation \\\\\\\\ $e_2_derivation \\\\\\\\ $eqString}{\\state{\\textsc{$syntax}}{\\xi_1}{\\phi}{\\rho_1} \\Downarrow \\state{$v_r}{\\xi_2}{\\phi}{\\rho_2}}"
 }

@@ -20,7 +20,7 @@ function isValidName(name) {
     if (name.startsWith("$")) {
         return false;
     }
-    let invalidWords = ['begin', 'if', 'set', 'while', 'var', '+', '-', "/", "=", "*"];
+    let invalidWords = ['begin', 'if', 'set', 'while', 'val', '+', '-', "/", "=", "*"];
     for (let i = 0; i < invalidWords.length; i++) {
         if (invalidWords[i] == name) {
             alert(`You cannot name your variable '${name}', as it is an Impcore keyword.`);
@@ -148,6 +148,10 @@ function addValuesToQueue(value) {
                 index++;
             }
         }
+        //no parenthesis
+        if (string != null) {
+            Queue.push(string);
+        }
     }
 }
 // ticks carry the ticks from before
@@ -165,15 +169,33 @@ function derive(exp, execute, ticks) {
         case "set":
             return SET(execute, ticks);
         case "+":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Add', equation : (f, s) => f + s});
+            return PRIMITIVE(exp, execute, ticks, {name : 'Add', 
+                                                   equation : (f, s) => f + s, 
+                                                   eqString : "-2^{31} \\leq $v_1 $f $v_2 < 2^{31}"});
         case "-":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Sub', equation : (f, s) => f - s});
+            return PRIMITIVE(exp, execute, ticks, {name : 'Sub', 
+                                                   equation : (f, s) => f - s,
+                                                   eqString : "-2^{31} \\leq $v_1 $f $v_2 < 2^{31}"});
         case "/":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Div', equation : (f, s) => Math.floor(f / s)});
+            return PRIMITIVE(exp, execute, ticks, {name : 'Div', 
+                                                   equation : (f, s) => Math.floor(f / s),
+                                                   eqString : "-2^{31} \\leq $v_1 $f $v_2 < 2^{31}"});
         case "*":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Div', equation : (f, s) => f * s});
+            return PRIMITIVE(exp, execute, ticks, {name : 'Mult', 
+                                                   equation : (f, s) => f * s,
+                                                   eqString : "-2^{31} \\leq $v_1 $f $v_2 < 2^{31}"});
         case "=":
-            return EQ(execute, ticks, {name : 'Eq', equation : (f, s) => f == s ? 1 : 0});
+            return PRIMITIVE(exp, execute, ticks, {name : 'Eq', 
+                                                   equation : (f, s) => f == s ? 1 : 0,
+                                                   eqString : "$v_1 ?= $v_2"});
+        case ">":
+            return PRIMITIVE(exp, execute, ticks, {name : 'Gt', 
+                                                   equation : (f, s) => f > s ? 1 : 0,
+                                                   eqString : "$v_r = $v_1 > $v_2"});
+        case "<":
+            return PRIMITIVE(exp, execute, ticks, {name : 'Lt', 
+                                                    equation : (f, s) => f < s ? 1 : 0,
+                                                    eqString : "$v_r = $v_1 < $v_2"});
         default:
            return VAR(exp, ticks);
     }
@@ -340,13 +362,23 @@ function BEGIN(exp, execute, ticks) {
 function PRIMITIVE(exp, execute, ticks, functionInfo) {
     let derivation = inferenceRules.applyPrimitive;
     derivation = addTicks(derivation, ticks, "_1");
-
+    derivation = derivation.replaceAll("$eqString", functionInfo.eqString);
     const first = derive(Queue.pop(), execute, ticks);
     const second = derive(Queue.pop(), execute, ticks);
     const result = functionInfo.equation(first.value, second.value);
     derivation = addTicks(derivation, ticks, "_2");
 
-    derivation = derivation.replace("{Apply}", `{Apply${functionInfo.name}}`);
+    if (exp == "=") {
+        if (result == 0) {
+            derivation = derivation.replace("{Apply}", "{ApplyEqFalse}");
+            derivation = derivation.replace("?=", "\\neq");
+        } else {
+            derivation = derivation.replace("{Apply}", "{ApplyEqTrue}");
+            derivation = derivation.replace("?=", "=");
+        }
+    } else {
+        derivation = derivation.replace("{Apply}", `{Apply${functionInfo.name}}`);
+    }
     derivation = derivation.replaceAll("$f", exp);
     derivation = derivation.replaceAll("$e_1_derivation", first.derivation);
     derivation = derivation.replaceAll("$e_2_derivation", second.derivation);
@@ -354,36 +386,6 @@ function PRIMITIVE(exp, execute, ticks, functionInfo) {
     derivation = derivation.replaceAll("$v_2", second.value);
     derivation = derivation.replaceAll("$v_r", result);
     let syntax = `Apply(${exp}, ${first.syntax}, ${second.syntax})`;
-    derivation = derivation.replace("$syntax", syntax);
-
-    return {"syntax" : syntax,
-            "value" : result,
-            "derivation" : derivation};
-}
-
-function EQ(execute, ticks, functionInfo) {
-    let derivation = inferenceRules.applyEq;
-    derivation = addTicks(derivation, ticks, "_1");
-
-    const first = derive(Queue.pop(), execute, ticks);
-    const second = derive(Queue.pop(), execute, ticks);
-    const result = functionInfo.equation(first.value, second.value);
-    derivation = addTicks(derivation, ticks, "_2");
-
-    if (result == 0) {
-        derivation = derivation.replace("{Apply}", "{ApplyEqFalse}");
-        derivation = derivation.replace("?=", "\\neq");
-    } 
-    else {
-        derivation = derivation.replace("{Apply}", "{ApplyEqTrue}");
-        derivation = derivation.replace("?=", "=");
-    }
-    derivation = derivation.replace("$e_1_derivation", first.derivation);
-    derivation = derivation.replace("$e_2_derivation", second.derivation);
-    derivation = derivation.replaceAll("$v_1", first.value);
-    derivation = derivation.replaceAll("$v_2", second.value);
-    derivation = derivation.replace("$v_r", result);
-    let syntax = `Apply(=, ${first.syntax}, ${second.syntax})`;
     derivation = derivation.replace("$syntax", syntax);
 
     return {"syntax" : syntax,
