@@ -101,6 +101,7 @@ button.addEventListener('click', () => {
         window.location.href = "#output";
         document.getElementById("output").style.display = 'block';
     } catch (error) {
+        console.log(error);
         alert(`Improper Impcore expression!`);
         return;
     }
@@ -114,28 +115,15 @@ function addValuesToQueue(value) {
 
     function queueHelper(input, string, beginAmount) {
         while (index < input.length) {
-            if (input[index] == "(") {
+            const char = input[index];
+            if (char == "(") {
                 index++;
                 queueHelper(input, "", null);
-                if (beginAmount != null) {
+                if (beginAmount != null) { //count the nested exp
                     beginAmount++;
                 }
             } 
-            else if (input[index] == ")") {
-                if (string != "") {
-                    Queue.push(string);
-                    string = "";
-                    if (beginAmount != null) {
-                        beginAmount++;
-                    }
-                }
-                if (beginAmount != null) {
-                    Queue[beginIndexes.pop()] += beginAmount.toString();
-                }
-                index++;
-                return;
-            } 
-            else if (input[index] == " ") {
+            else if (char == ")" || char == " ") {
                 if (string == "begin") {
                     beginIndexes.push(Queue.length);
                     beginAmount = 0;
@@ -147,15 +135,21 @@ function addValuesToQueue(value) {
                     Queue.push(string);
                     string = "";
                 }
+                if (beginAmount != null && char == ")") {
+                    Queue[beginIndexes.pop()] += beginAmount.toString();
+                }
                 index++;
-            } 
+                if (char == ")") {
+                    return;
+                }
+            }
             else {
-                string += input[index];
+                string += char;
                 index++;
             }
         }
         //no parenthesis
-        if (string != null) {
+        if (string != "") {
             Queue.push(string);
         }
     }
@@ -164,7 +158,7 @@ function addValuesToQueue(value) {
 function derive(exp, execute, ticks) {
 
     if (/^\d+$/.test(exp)) {
-        return LIT(parseInt(exp), ticks);
+        return LIT(parseInt(exp), execute, ticks);
     }
     if (exp.startsWith("begin")) {
         return BEGIN(exp, execute, ticks);
@@ -203,7 +197,7 @@ function derive(exp, execute, ticks) {
                                                     equation : (f, s) => f < s ? 1 : 0,
                                                     eqString : "$v_r = $v_1 < $v_2"});
         default:
-           return VAR(exp, ticks);
+           return VAR(exp, execute, ticks);
     }
 }
 
@@ -229,7 +223,10 @@ function findVarInfo(variable) {
     throw new Error(`${variable} cannot be found in either xi or rho.`);
 }
 
-function addTicks(derivation, ticks, match) {
+function addTicks(derivation, ticks, match, execute) {
+    if (!execute) {
+        return "";
+    }
     //rho, xi
     for (const key in ticks) {
         let env = key.split('_')[0];
@@ -243,27 +240,31 @@ function addTicks(derivation, ticks, match) {
 }
 // END OF UTILITIES
 
-function LIT(number, ticks) {
+function LIT(number, execute, ticks) {
     let derivation = inferenceRules.literal;
-    derivation = derivation.replaceAll("$v", number);
-    derivation = addTicks(derivation, ticks, "_1");
+    if (execute) {
+        derivation = derivation.replaceAll("$v", number);
+        derivation = addTicks(derivation, ticks, "_1", execute);
+    }
     return {"syntax" : `Literal(${number})`, 
             "value" : number,
             "derivation" : derivation};
 }
 
-function VAR(name, ticks) {
+function VAR(name, execute, ticks) {
     let variable = findVarInfo(name);
     let derivation = inferenceRules.var;
-    derivation = derivation.replaceAll("$x", name);
-    if (variable.env == "rho") {
-        derivation = derivation.replace("{Var}", "{FormalVar}");
-        derivation = derivation.replaceAll("$env", "\\rho_1");
-    } else if (variable.env == "xi") {
-        derivation = derivation.replace("{Var}", "{GlobalVar}");
-        derivation = derivation.replaceAll("$env", "\\xi_1");
+    if (execute) {
+        derivation = derivation.replaceAll("$x", name);
+        if (variable.env == "rho") {
+            derivation = derivation.replace("{Var}", "{FormalVar}");
+            derivation = derivation.replaceAll("$env", "\\rho_1");
+        } else if (variable.env == "xi") {
+            derivation = derivation.replace("{Var}", "{GlobalVar}");
+            derivation = derivation.replaceAll("$env", "\\xi_1");
+        }
+        derivation = addTicks(derivation, ticks, "_1", execute);
     }
-    derivation = addTicks(derivation, ticks, "_1");
     return {"syntax" : `Var(${name})`, 
             "value" : variable.value, 
             "derivation" : derivation,
@@ -271,15 +272,15 @@ function VAR(name, ticks) {
 }
 
 function IF(execute, ticks) {
-    let derivation = inferenceRules.if;
     let syntax = "If(e_1, e_2, e_3)";
     let value;
-    derivation = addTicks(derivation, ticks, "_1"); 
+    let derivation = inferenceRules.if;
+    derivation = addTicks(derivation, ticks, "_1", execute); 
     const condition = derive(Queue.pop(), execute, ticks);
     const trueCase = derive(Queue.pop(), condition.value != 0 && execute, ticks);
     const falseCase = derive(Queue.pop(), condition.value == 0 && execute, ticks);
      //ticks obj is changed by reference
-    derivation = addTicks(derivation, ticks, "_2");
+    derivation = addTicks(derivation, ticks, "_2", execute);
 
     function editDerivation(title, equal, branch) {
         derivation = derivation.replace("{If}", title);
@@ -288,18 +289,19 @@ function IF(execute, ticks) {
         derivation = derivation.replace("$v_r", branch.value);
         value = branch.value;
     }
-
-    if (condition.value == 0) {
-        editDerivation("{IfFalse}", "=", falseCase);
-    } else {
-        editDerivation("{IfTrue}", "\\neq", trueCase);
-    }
-    derivation = derivation.replace("$v_1", condition.value);
-    derivation = derivation.replace("$eval_cond", condition.derivation);
     syntax = syntax.replace("e_1", condition.syntax);
     syntax = syntax.replace("e_2", trueCase.syntax);
     syntax = syntax.replace("e_3", falseCase.syntax);
-    derivation = derivation.replace("$syntax", syntax);
+    if (execute) {
+        if (condition.value == 0) {
+            editDerivation("{IfFalse}", "=", falseCase);
+        } else {
+            editDerivation("{IfTrue}", "\\neq", trueCase);
+        }
+        derivation = derivation.replace("$v_1", condition.value);
+        derivation = derivation.replace("$eval_cond", condition.derivation);
+        derivation = derivation.replace("$syntax", syntax);
+    }   
     return {"syntax" : syntax, 
             "value" : value, 
             "derivation" : derivation};
@@ -307,7 +309,7 @@ function IF(execute, ticks) {
 
 function SET(execute, ticks) {
     let derivation  = inferenceRules.set;
-    derivation = addTicks(derivation, ticks, "_1");
+    derivation = addTicks(derivation, ticks, "_1", execute);
     //ticks are changed from the derive process
     const variable = derive(Queue.pop(), execute, ticks); 
     const exp = derive(Queue.pop(), execute, ticks);
@@ -324,16 +326,16 @@ function SET(execute, ticks) {
         }
         derivation = derivation.replace(`\\${env}_2`, `\\${env}_2\\{${variable.name}\\mapsto${exp.value}\\}`);
     }
-    derivation = addTicks(derivation, ticks, "_2");
+    derivation = addTicks(derivation, ticks, "_2", execute);
     if (execute) {
         ticks[`${env}_ticks`]++;
+        derivation = derivation.replace("$Scope", `${variable.name} \\in dom \\${env}`);
+        derivation = derivation.replace("$exp_derivation", exp.derivation);
+        derivation = derivation.replace("$x", variable.syntax);
+        derivation = derivation.replace("$e", exp.syntax);
+        derivation = derivation.replace("$v", exp.value);
     }
-    derivation = derivation.replace("$Scope", `${variable.name} \\in dom \\${env}`);
-    derivation = derivation.replace("$exp_derivation", exp.derivation);
-    derivation = derivation.replace("$x", variable.syntax);
-    derivation = derivation.replace("$e", exp.syntax);
-    derivation = derivation.replace("$v", exp.value);
-
+    // console.log("set is returning: ", derivation);
     return {"syntax" : `Set(${variable.syntax}, ${exp.syntax})`,
             "value" : exp.value,
             "derivation" : derivation};
@@ -342,57 +344,65 @@ function SET(execute, ticks) {
 function BEGIN(exp, execute, ticks) {
 
     const n_amnt = parseInt(exp.split("begin")[1]);
+    let value = 0;
     let exps_syntax = "";
     let derivation = inferenceRules.begin;
     let exps_derivations = "";
     let expression;
-    derivation = addTicks(derivation, ticks, "_1");
+    derivation = addTicks(derivation, ticks, "_1", execute);
     for (let i = 0; i < n_amnt; i++) {
         expression = derive(Queue.pop(), execute, ticks);
+        console.log("expression's derivation is ", expression.derivation);
         exps_syntax += expression.syntax + ", ";
         exps_derivations += "  \\\\\\\\ " + expression.derivation;
     }
-    derivation = addTicks(derivation, ticks, "_2");
-    exps_syntax = exps_syntax.substring(0, exps_syntax.length - 1);
-    let syntax = `Begin(${exps_syntax})`
-    //begin result value is the last expression's value
-    derivation = derivation.replace("$v_r", expression.value); 
-    derivation = derivation.replace("$exps", exps_syntax);
-    derivation = derivation.replace("$derivations", exps_derivations);
+    if (n_amnt != 0) {
+        value = expression.value;
+    }
+    derivation = addTicks(derivation, ticks, "_2", execute);
+    exps_syntax = exps_syntax.substring(0, exps_syntax.length - 2);
+    let syntax = `Begin(${exps_syntax})`;
+    if (execute) {
+         //begin result value is the last expression's value
+        derivation = derivation.replace("$v_r", value); 
+        derivation = derivation.replace("$exps", exps_syntax);
+        derivation = derivation.replace("$derivations", exps_derivations);
+    }
 
     return {"syntax" : syntax,
-            "value" : expression.value,
+            "value" : value,
             "derivation" : derivation};
 }
 
 function PRIMITIVE(exp, execute, ticks, functionInfo) {
     let derivation = inferenceRules.applyPrimitive;
-    derivation = addTicks(derivation, ticks, "_1");
+    derivation = addTicks(derivation, ticks, "_1", execute);
     derivation = derivation.replaceAll("$eqString", functionInfo.eqString);
     const first = derive(Queue.pop(), execute, ticks);
     const second = derive(Queue.pop(), execute, ticks);
     const result = functionInfo.equation(first.value, second.value);
-    derivation = addTicks(derivation, ticks, "_2");
-
-    if (exp == "=") {
-        if (result == 0) {
-            derivation = derivation.replace("{Apply}", "{ApplyEqFalse}");
-            derivation = derivation.replace("?=", "\\neq");
-        } else {
-            derivation = derivation.replace("{Apply}", "{ApplyEqTrue}");
-            derivation = derivation.replace("?=", "=");
-        }
-    } else {
-        derivation = derivation.replace("{Apply}", `{Apply${functionInfo.name}}`);
-    }
-    derivation = derivation.replaceAll("$f", exp);
-    derivation = derivation.replaceAll("$e_1_derivation", first.derivation);
-    derivation = derivation.replaceAll("$e_2_derivation", second.derivation);
-    derivation = derivation.replaceAll("$v_1", first.value);
-    derivation = derivation.replaceAll("$v_2", second.value);
-    derivation = derivation.replaceAll("$v_r", result);
+    derivation = addTicks(derivation, ticks, "_2", execute);
     let syntax = `Apply(${exp}, ${first.syntax}, ${second.syntax})`;
-    derivation = derivation.replace("$syntax", syntax);
+    if (execute) {
+        if (exp == "=") {
+            if (result == 0) {
+                derivation = derivation.replace("{Apply}", "{ApplyEqFalse}");
+                derivation = derivation.replace("?=", "\\neq");
+            } else {
+                derivation = derivation.replace("{Apply}", "{ApplyEqTrue}");
+                derivation = derivation.replace("?=", "=");
+            }
+        } else {
+            derivation = derivation.replace("{Apply}", `{Apply${functionInfo.name}}`);
+        }
+        derivation = derivation.replaceAll("$f", exp);
+        derivation = derivation.replaceAll("$e_1_derivation", first.derivation);
+        derivation = derivation.replaceAll("$e_2_derivation", second.derivation);
+        derivation = derivation.replaceAll("$v_1", first.value);
+        derivation = derivation.replaceAll("$v_2", second.value);
+        derivation = derivation.replaceAll("$v_r", result);
+        derivation = derivation.replace("$syntax", syntax);
+    }   
 
     return {"syntax" : syntax,
             "value" : result,
