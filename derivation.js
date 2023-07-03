@@ -255,14 +255,15 @@ function VAR(name, execute, ticks) {
     let variable = findVarInfo(name);
     let derivation = inferenceRules.var;
     if (execute) {
-        derivation = derivation.replaceAll("$x", name);
         if (variable.env == "rho") {
             derivation = derivation.replace("{Var}", "{FormalVar}");
-            derivation = derivation.replaceAll("$env", "\\rho_1");
+            derivation = derivation.replaceAll("$scope", "$x \\in dom \\rho_1");
         } else if (variable.env == "xi") {
             derivation = derivation.replace("{Var}", "{GlobalVar}");
-            derivation = derivation.replaceAll("$env", "\\xi_1");
+            derivation = derivation.replaceAll("$scope", "$x \\notin dom \\rho_1 \\and $x \\in dom \\xi_1");
         }
+        derivation = derivation.replaceAll("$x", name);
+        derivation = derivation.replaceAll("$env", `${variable.env}_1`);
         derivation = addTicks(derivation, ticks, "_1", execute);
     }
     return {"syntax" : `Var(${name})`, 
@@ -309,27 +310,26 @@ function IF(execute, ticks) {
 
 function SET(execute, ticks) {
     let derivation  = inferenceRules.set;
-    derivation = addTicks(derivation, ticks, "_1", execute);
+    const beforeTicks = ticks;
     //ticks are changed from the derive process
     const variable = derive(Queue.pop(), execute, ticks); 
     const exp = derive(Queue.pop(), execute, ticks);
     const env = findVarInfo(variable.name).env;
-    if (execute) {  
+    if (execute) {
+        if (env == "rho") {
+            derivation = derivation.replace("$Scope", `${variable.name} \\in dom \\rho_1`);
+            derivation = derivation.replace("{Assign}", "{FormalAssign}");
+        } else {
+            derivation = derivation.replace("$Scope", `${variable.name} \\notin dom \\rho_1 \\and ${variable.name} \\in dom \\xi_1`);
+            derivation = derivation.replace("{Assign}", "{GlobalAssign}");
+        }
+        derivation = addTicks(derivation, beforeTicks, "_1", execute);
         let environment = {"rho" : rho, "xi" : xi};
         environment[env][variable.name] = exp.value;
         //add the tick for the change in environment and assign formal title
-        if (env == "rho") {
-            derivation = derivation.replace("{Assign}", "{FormalAssign}");
-        } 
-        else {
-            derivation = derivation.replace("{Assign}", "{GlobalAssign}");
-        }
         derivation = derivation.replace(`\\${env}_2`, `\\${env}_2\\{${variable.name}\\mapsto${exp.value}\\}`);
-    }
-    derivation = addTicks(derivation, ticks, "_2", execute);
-    if (execute) {
+        derivation = addTicks(derivation, ticks, "_2", execute);
         ticks[`${env}_ticks`]++;
-        derivation = derivation.replace("$Scope", `${variable.name} \\in dom \\${env}`);
         derivation = derivation.replace("$exp_derivation", exp.derivation);
         derivation = derivation.replace("$x", variable.syntax);
         derivation = derivation.replace("$e", exp.syntax);

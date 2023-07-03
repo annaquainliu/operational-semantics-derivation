@@ -1,7 +1,7 @@
 {
     "if":  "\\inferrule*[Right=\\textsc{If}]{$eval_cond \\and $v_1 ?= 0 \\and $eval_result}{\\state{\\textsc{$syntax}}{\\xi_1}{\\phi}{\\rho_1} \\Downarrow  \\state{$v_r}{\\xi_2}{\\phi}{\\rho_2}}",
     "set": "\\inferrule*[Right=\\textsc{Assign}]{$Scope \\and $exp_derivation}{\\state{\\textsc{Set($x, $e)}}{\\xi_1}{\\phi}{\\rho_1} \\Downarrow \\state{$v}{\\xi_2}{\\phi}{\\rho_2}}",
-    "var": "\\inferrule*[Right=\\textsc{Var}]{$x \\in dom $env}{\\state{\\textsc{Var($x)}}{\\xi_1}{\\phi}{\\rho_1}\\Downarrow\\state{$env($x)}{\\xi_1}{\\phi}{\\rho_1}}",
+    "var": "\\inferrule*[Right=\\textsc{Var}]{$scope}{\\state{\\textsc{Var($x)}}{\\xi_1}{\\phi}{\\rho_1}\\Downarrow\\state{\\$env($x)}{\\xi_1}{\\phi}{\\rho_1}}",
     "literal": "\\inferrule*[Right=\\textsc{Literal}]{\\ }{\\state{\\textsc{Literal($v)}}{\\xi_1}{\\phi}{\\rho_1}\\Downarrow\\state{$v}{\\xi_1}{\\phi}{\\rho_1}}",
     "begin": "\\inferrule*[Right=\\textsc{Begin}]{$derivations}{\\state{\\textsc{Begin($exps)}}{\\xi_1}{\\phi}{\\rho_1} \\Downarrow \\state{\\textsc{$v_r}}{\\xi_2}{\\phi}{\\rho_2}}",
     "applyPrimitive": "\\inferrule*[Right=\\textsc{Apply}]{\\phi($f) = \\textsc{Primitive}($f) \\\\\\\\ $e_1_derivation \\\\\\\\ $e_2_derivation \\\\\\\\ $eqString}{\\state{\\textsc{$syntax}}{\\xi_1}{\\phi}{\\rho_1} \\Downarrow \\state{$v_r}{\\xi_2}{\\phi}{\\rho_2}}"
