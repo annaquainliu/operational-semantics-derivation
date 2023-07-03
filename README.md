@@ -25,4 +25,4 @@ Image of Output:
 
 This program does not implement the `while` function in Impcore, as the Latex derivation would be unreadable.
 
-Additionally, this program does not allow declaring any functions or the use of any Impcore standard basis functions. 
+Additionally, this program does not allow the user to declare any functions.
