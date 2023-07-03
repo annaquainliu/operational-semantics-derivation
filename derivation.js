@@ -21,11 +21,9 @@ function isValidName(name) {
         return false;
     }
     let invalidWords = ['begin', 'if', 'set', 'while', 'val', '+', '-', "/", "=", "*"];
-    for (let i = 0; i < invalidWords.length; i++) {
-        if (invalidWords[i] == name) {
-            alert(`You cannot name your variable '${name}', as it is an Impcore keyword.`);
-            return false;
-        }
+    if (invalidWords.includes(name)) {
+        alert(`You cannot name your variable '${name}', as it is an Impcore keyword.`);
+        return false;
     }
     return true;
 }
@@ -46,7 +44,7 @@ Array.prototype.forEach.call(variables, variableDiv => {
         }
     });
     button.addEventListener('click', () => {
-        const name = nameField.value;
+        const name = nameField.value.replaceAll(" ", "");
         const value = valueField.value;
         if (name == "" || value == "") {
             alert("Please fill in the name and the value of the variable");
