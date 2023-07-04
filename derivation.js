@@ -356,13 +356,17 @@ function BEGIN(exp, execute, ticks) {
         exps_syntax += expression.syntax + ", ";
         exps_derivations += "  \\\\\\\\ " + expression.derivation;
     }
-    if (n_amnt != 0) {
-        value = expression.value;
-    }
     derivation = addTicks(derivation, ticks, "_2", execute);
     exps_syntax = exps_syntax.substring(0, exps_syntax.length - 2);
     let syntax = `Begin(${exps_syntax})`;
     if (execute) {
+        if (n_amnt == 0) {
+            derivation = derivation.replace("{Begin}", "{EmptyBegin}");
+            exps_derivations = " \\ ";
+        }
+        else {
+            value = expression.value;
+        }
          //begin result value is the last expression's value
         derivation = derivation.replace("$v_r", value); 
         derivation = derivation.replace("$exps", exps_syntax);
