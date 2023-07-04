@@ -53,6 +53,9 @@ body h2 {
     background-color: rgb(217, 217, 217);
 }
 
+.expression > input { 
+    width: 70%;
+}
 
 button {
     font-size: 1.2vw;
