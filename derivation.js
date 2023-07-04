@@ -18,6 +18,7 @@ window.onload = () => {
 
 function isValidName(name) {
     if (name.startsWith("$")) {
+        alert(`You cannot start your variable name with a '$'.`);
         return false;
     }
     let invalidWords = ['begin', 'if', 'set', 'while', 'val', '+', '-', "/", "=", "*"];
@@ -136,7 +137,7 @@ function addValuesToQueue(value) {
                     string = "";
                 }
                 if (beginAmount != null && char == ")") {
-                    Queue[beginIndexes.pop()] += beginAmount.toString();
+                    Queue[beginIndexes.pop()] = `$begin${beginAmount.toString()}`;
                 }
                 index++;
                 if (char == ")") {
@@ -160,7 +161,8 @@ function derive(exp, execute, ticks) {
     if (/^\d+$/.test(exp)) {
         return LIT(parseInt(exp), execute, ticks);
     }
-    if (exp.startsWith("begin")) {
+    // TODO: THIS COULD LEAD TO ERROR IF A VARIABLE STARTS WITH BEGIN
+    if (exp.startsWith("$begin")) {
         return BEGIN(exp, execute, ticks);
     }
     switch (exp) {
@@ -191,11 +193,11 @@ function derive(exp, execute, ticks) {
         case ">":
             return PRIMITIVE(exp, execute, ticks, {name : 'Gt', 
                                                    equation : (f, s) => f > s ? 1 : 0,
-                                                   eqString : "$v_r = $v_1 > $v_2"});
+                                                   eqString : "$v_1 > $v_2 = $v_r"});
         case "<":
             return PRIMITIVE(exp, execute, ticks, {name : 'Lt', 
                                                     equation : (f, s) => f < s ? 1 : 0,
-                                                    eqString : "$v_r = $v_1 < $v_2"});
+                                                    eqString : "$v_1 < $v_2 = $v_r"});
         default:
            return VAR(exp, execute, ticks);
     }
@@ -335,7 +337,6 @@ function SET(execute, ticks) {
         derivation = derivation.replace("$e", exp.syntax);
         derivation = derivation.replace("$v", exp.value);
     }
-    // console.log("set is returning: ", derivation);
     return {"syntax" : `Set(${variable.syntax}, ${exp.syntax})`,
             "value" : exp.value,
             "derivation" : derivation};
@@ -343,7 +344,7 @@ function SET(execute, ticks) {
 
 function BEGIN(exp, execute, ticks) {
 
-    const n_amnt = parseInt(exp.split("begin")[1]);
+    const n_amnt = parseInt(exp.split("$begin")[1]);
     let value = 0;
     let exps_syntax = "";
     let derivation = inferenceRules.begin;
@@ -352,7 +353,6 @@ function BEGIN(exp, execute, ticks) {
     derivation = addTicks(derivation, ticks, "_1", execute);
     for (let i = 0; i < n_amnt; i++) {
         expression = derive(Queue.pop(), execute, ticks);
-        console.log("expression's derivation is ", expression.derivation);
         exps_syntax += expression.syntax + ", ";
         exps_derivations += "  \\\\\\\\ " + expression.derivation;
     }
