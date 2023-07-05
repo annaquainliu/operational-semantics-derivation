@@ -8,6 +8,8 @@ let rho = {};
 
 let inferenceRules;
 let Queue = [];
+const numberDerivationsCap = 50;
+let numberDerivations = 0;
 
 window.onload = () => {
     fetch('impcore-inferenceRules.json')
@@ -85,6 +87,7 @@ function addVariablesToEnv() {
 }
 //derive
 button.addEventListener('click', () => {
+    numberDerivations = 0;
     addVariablesToEnv();
     let value = input.value.toLowerCase();
     if (value == "" || value == null) {
@@ -99,11 +102,16 @@ button.addEventListener('click', () => {
         const derivation = derive(Queue.pop(), true, {"rho_ticks" : 0, "xi_ticks" : 0});
         console.log("derivation is", derivation);
         latexOutput.innerText = derivation.derivation;
+        console.log(derivation.impcore);
         window.location.href = "#output";
         document.getElementById("output").style.display = 'block';
-    } catch (error) {
-        console.log(error);
-        alert(`Improper Impcore expression!`);
+    } catch ({name, message}) {
+        console.log(message);
+        if (message == "Nested derivation is too deep.") {
+            alert(`The derivation has over the max amount of layers (${numberDerivationsCap}).`);
+        } else {
+            alert(`Improper Impcore expression!`);
+        }
         return;
     }
 });
@@ -158,10 +166,13 @@ function addValuesToQueue(value) {
 // ticks carry the ticks from before
 function derive(exp, execute, ticks) {
 
+    numberDerivations++;
+    if (numberDerivations > numberDerivationsCap) {
+        throw new Error("Nested derivation is too deep.");
+    }
     if (/^\d+$/.test(exp)) {
         return LIT(parseInt(exp), execute, ticks);
     }
-    // TODO: THIS COULD LEAD TO ERROR IF A VARIABLE STARTS WITH BEGIN
     if (exp.startsWith("$begin")) {
         return BEGIN(exp, execute, ticks);
     }
@@ -170,6 +181,8 @@ function derive(exp, execute, ticks) {
             return IF(execute, ticks);
         case "set":
             return SET(execute, ticks);
+        case "while":
+            return _WHILE(execute, ticks, true);
         case "+":
             return PRIMITIVE(exp, execute, ticks, {name : 'Add', 
                                                    equation : (f, s) => f + s, 
@@ -250,7 +263,8 @@ function LIT(number, execute, ticks) {
     }
     return {"syntax" : `Literal(${number})`, 
             "value" : number,
-            "derivation" : derivation};
+            "derivation" : derivation,
+            "impcore" : [number]};
 }
 
 function VAR(name, execute, ticks) {
@@ -271,7 +285,8 @@ function VAR(name, execute, ticks) {
     return {"syntax" : `Var(${name})`, 
             "value" : variable.value, 
             "derivation" : derivation,
-            "name" : name};
+            "name" : name,
+            "impcore" : [name]};
 }
 
 function IF(execute, ticks) {
@@ -305,9 +320,11 @@ function IF(execute, ticks) {
         derivation = derivation.replace("$eval_cond", condition.derivation);
         derivation = derivation.replace("$syntax", syntax);
     }   
+    let impcore = ['if'].concat(condition.impcore).concat(trueCase.impcore).concat(falseCase.impcore);
     return {"syntax" : syntax, 
             "value" : value, 
-            "derivation" : derivation};
+            "derivation" : derivation,
+            "impcore" : impcore};
 }
 
 function SET(execute, ticks) {
@@ -339,7 +356,8 @@ function SET(execute, ticks) {
     }
     return {"syntax" : `Set(${variable.syntax}, ${exp.syntax})`,
             "value" : exp.value,
-            "derivation" : derivation};
+            "derivation" : derivation,
+            "impcore" : ['set'].concat(variable.impcore).concat(exp.impcore)};
 }
 
 function BEGIN(exp, execute, ticks) {
@@ -350,11 +368,13 @@ function BEGIN(exp, execute, ticks) {
     let derivation = inferenceRules.begin;
     let exps_derivations = "";
     let expression;
+    let impcore = [exp];
     derivation = addTicks(derivation, ticks, "_1", execute);
     for (let i = 0; i < n_amnt; i++) {
         expression = derive(Queue.pop(), execute, ticks);
         exps_syntax += expression.syntax + ", ";
         exps_derivations += "  \\\\\\\\ " + expression.derivation;
+        impcore = impcore.concat(expression.impcore);
     }
     derivation = addTicks(derivation, ticks, "_2", execute);
     exps_syntax = exps_syntax.substring(0, exps_syntax.length - 2);
@@ -375,7 +395,8 @@ function BEGIN(exp, execute, ticks) {
 
     return {"syntax" : syntax,
             "value" : value,
-            "derivation" : derivation};
+            "derivation" : derivation,
+            "impcore" : impcore};
 }
 
 function PRIMITIVE(exp, execute, ticks, functionInfo) {
@@ -410,6 +431,53 @@ function PRIMITIVE(exp, execute, ticks, functionInfo) {
 
     return {"syntax" : syntax,
             "value" : result,
-            "derivation" : derivation};
+            "derivation" : derivation,
+            'impcore' : [exp].concat(first.impcore).concat(second.impcore)};
 }
 
+
+
+function _WHILE(execute, ticks, first) {
+    let derivation = inferenceRules.while;
+    derivation = addTicks(derivation, ticks, "_1", execute);
+    let condition = derive(Queue.pop(), execute, ticks);
+    let expression; // execute the expression only if condition is true
+    const beforeQueue = Queue;
+    if (execute) {
+        derivation = derivation.replace("$cond_derivation", condition.derivation);
+        derivation = derivation.replace("$cond_value", condition.value);
+        if (condition.value == 0) {
+            expression = derive(Queue.pop(), false, ticks);
+            derivation = editWhileRule(derivation, ticks, first, "{WhileEnd}", "");
+            derivation = derivation.replace("\\neq", "=");
+            derivation = derivation.replace("$next_while", "");
+        } 
+        else {
+            expression = derive(Queue.pop(), execute, ticks);
+            derivation = editWhileRule(derivation, ticks, first, "{WhileIterate}", expression.derivation);
+            Queue = condition.impcore.concat(expression.impcore).reverse();
+            derivation = derivation.replace("$next_while", _WHILE(execute, ticks, false).derivation);
+        }
+        if (first) {
+            derivation = addTicks(derivation, ticks, "_2", execute);
+        }
+        derivation = derivation.replace("$syntax", `While(${condition.syntax}, ${expression.syntax})`);
+    } 
+    else {
+        expression = derive(Queue.pop(), false, ticks);
+    }
+    Queue = beforeQueue;
+    return {"syntax" : `While(${condition.syntax}, ${expression.syntax})`,
+            "value" : 0,
+            "derivation": derivation,
+            "impcore" : ['while'].concat(condition.impcore).concat(expression.impcore)};
+}
+
+function editWhileRule(derivation, ticks, first, title, exp_derivation) {
+    if (!first) {
+        derivation = addTicks(derivation, ticks, "_2", true);
+    }
+    derivation = derivation.replace("{While}", title);
+    derivation = derivation.replace("$exp_derivation", exp_derivation);
+    return derivation;
+}
