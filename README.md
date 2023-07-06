@@ -19,10 +19,6 @@ $
 
 Image of Output:
 
-![image (1)](https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/e062ad76-5c47-44a3-8155-20853186d2d3)
-
 # Limitations
 
-This program does not implement the `while` function in Impcore, as the Latex derivation would be unreadable.
-
-Additionally, this program does not allow the user to declare any functions.
+ This program does not allow the user to declare any functions (yet!).
