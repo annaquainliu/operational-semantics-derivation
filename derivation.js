@@ -446,14 +446,13 @@ function _WHILE(execute, ticks, first) {
     if (execute) {
         derivation = derivation.replace("$cond_derivation", condition.derivation);
         derivation = derivation.replace("$cond_value", condition.value);
+        expression = derive(Queue.pop(), condition.value != 0, ticks);
         if (condition.value == 0) {
-            expression = derive(Queue.pop(), false, ticks);
             derivation = editWhileRule(derivation, ticks, first, "{WhileEnd}", "");
             derivation = derivation.replace("\\neq", "=");
             derivation = derivation.replace("$next_while", "");
         } 
         else {
-            expression = derive(Queue.pop(), execute, ticks);
             derivation = editWhileRule(derivation, ticks, first, "{WhileIterate}", expression.derivation);
             Queue = condition.impcore.concat(expression.impcore).reverse();
             derivation = derivation.replace("$next_while", _WHILE(execute, ticks, false).derivation);
