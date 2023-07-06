@@ -25,6 +25,7 @@ The last environment is the Φ environment, which stores functions by mapping th
 There are 7 different types of Impcore expressions.
 
 exp ::= 
+
        | integer-literal 
        
        | variable-name
