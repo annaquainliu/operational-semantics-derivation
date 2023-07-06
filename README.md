@@ -26,9 +26,9 @@ There are 7 different types of Impcore expressions.
 
 exp ::= 
 
-       | integer-literal 
+       | integer - literal)
        
-       | variable-name
+       | variable - name
        
        | (set x exp) 
        
