@@ -1,6 +1,6 @@
 # Operational Semantics Derivation Program
 
-This program takes in any Impcore expression and outputs its full derivation in Latex.
+This [website](https://annaquainliu.github.io/operational-semantics-derivation/), hosts a program takes in any Impcore expression and outputs its full derivation in Latex.
 
 Made this for pure fun! 😄
 
@@ -14,14 +14,16 @@ For the scope of this project, this program allows users to create Impcore expre
 
 Due to the recursive nature of Impcore's syntax, operational semantic derivations can create a recursive 'math expression' that explains the behavior of an Impcore expression. This program takes in an Impcore expression, and outputs the derivation in Latex syntax.
 
-## Impcore Environments
+### Impcore Environments
 Impcore stores variables in 3 different environments. 
 
 The ξ environment stores global variables. The ρ environment stores local variables (function parameters). ξ and ρ store variables by mapping the name of each variable to its value.
 
+**To define a variable with this website, press the + button next to the global or local environment**.
+
 The last environment is the Φ environment, which stores functions by mapping the name of the function to its body (an expression).
 
-## Impcore Expressions
+### Impcore Expressions
 There are 7 different types of Impcore expressions.
 
 exp ::= 
@@ -39,6 +41,9 @@ exp ::=
        | (begin exp1 ... expn)
        
        | (function-name exp1 ... expn)
+
+### Available Impcore Primitive Functions
+This program has implemented <, >, =, +, -, *, / standard basis functions.
 
 ## Examples
 Expression : `(if (set x 1) (if y x 45) 99)` 
