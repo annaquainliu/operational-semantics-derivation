@@ -25,11 +25,17 @@ The last environment is the Φ environment, which stores functions by mapping th
 There are 7 different types of Impcore expressions.
 
 exp ::= integer-literal 
+
        | variable-name
+       
        | (set x exp) 
+       
        | (if exp1 exp2 exp3)
+       
        | (while exp1 exp2)
+       
        | (begin exp1 ... expn)
+       
        | (function-name exp1 ... expn)
 
 ## Examples
