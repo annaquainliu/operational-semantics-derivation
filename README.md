@@ -6,7 +6,7 @@ Made this for pure fun! 😄
 
 ## What is Impcore?
 
-Impcore is a functional programming language which consists of two types of statements : definitions and expressions. Impcore code is simply a list of definitions. One way to create a definition is with the keyword `val`, which declares a value *(The only value type that exists in Impcore is the integer type)*. 
+Impcore is a functional programming language which consists of two types of statements : definitions and expressions. Impcore code is simply a list of definitions. For example, one type of definition is the declaration of a variable to hold an integer value, using the `val` keyword. *(The only value type that exists in Impcore is the integer type)*. 
 
 **All definitions must be assigned one expression, and expressions can consist of nested expressions**.
 
