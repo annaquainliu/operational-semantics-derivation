@@ -2,7 +2,7 @@
 
 This program takes in any Impcore expression and outputs its full derivation in Latex.
 
-Made this for pure fun!
+Made this for pure fun! 😄
 
 # Examples
 Expression : `(if (set x 1) (if y x 45) 99)` 
