@@ -189,6 +189,10 @@ function derive(exp, execute, ticks) {
             return SET(execute, ticks);
         case "while":
             return _WHILE(execute, ticks, true);
+        case "mod":
+            return PRIMITIVE(exp, execute, ticks, {name : 'Mod',
+                                                   equation: (f, s) => f % s,
+                                                   eqString : "-2^{31} \\leq $v_1 \\textsc{ mod } $v_2 < 2^{31}"})
         case "+":
             return PRIMITIVE(exp, execute, ticks, {name : 'Add', 
                                                    equation : (f, s) => f + s, 
