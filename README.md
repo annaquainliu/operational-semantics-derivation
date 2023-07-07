@@ -43,7 +43,7 @@ exp ::=
        | (function-name exp1 ... expn)
 
 ### Available Impcore Primitive Functions
-This program has implemented <, >, =, +, -, *, /, mod standard basis functions.
+This program has implemented <, >, =, +, -, *, /, mod, &&, || standard basis functions.
 
 ## Examples
 Expression : `(if (set x 1) (if y x 45) 99)` 
