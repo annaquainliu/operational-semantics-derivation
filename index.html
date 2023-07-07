@@ -41,27 +41,10 @@
         <input id="input" placeholder="Type in an Impcore expression!" style="text-align: center">
     </div>
     <button id="derive">Derive</button>
-    <div id="output">
-        <h1>Output</h1>
-        <p>\documentclass[11pt]{article}</p>
-        <p>\usepackage{alltt}</p>
-        <p>\usepackage{verbatim}</p>
-        <p>\usepackage{hyperref}</p>
-        <p>\usepackage{amsmath}</p>
-        <p>\usepackage{amssymb}</p>
-        <p>\usepackage{qtree}</p>
-        <p>\usepackage{semantic}</p>
-        <p>\usepackage{mathpartir}</p>
-        <p>\usepackage{adjustbox}</p>
-        <p>\begin{document}</p>
-        <p>\newcommand{\br}[1]{\langle #1 \rangle}</p>
-        <p>\newcommand{\state}[4]{\langle {#1,#2,#3,#4} \rangle}</p>
-        <p>\newcommand{\evalr}[2][{}]{\state{#2}{\xi#1}{\phi}{\rho#1}}</p>
-        <p>\begin{adjustbox}{width=\columnwidth,center}</p>
-        $<div id="latex"></div>$
-        <p>\end{adjustbox}</p>
-        <p>\end{document}</p>
-    </div>
+    <form action="https://www.overleaf.com/docs" method="post" target="_blank" id="output">
+        <textarea rows="8" cols="60" name="snip" id="latex"></textarea>
+        <input type="submit" value="Open in Overleaf">
+    </form>
 </body>
 <script src="derivation.js"></script>
 </html>
