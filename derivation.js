@@ -30,7 +30,7 @@ function isValidName(name) {
         alert(`You cannot start your variable name with a '$'.`);
         return false;
     }
-    let invalidWords = ['begin', 'if', 'set', 'while', 'val', '+', '-', "/", "=", "*"];
+    let invalidWords = ['begin', 'if', 'set', 'while', 'val', '+', '-', "/", "=", "*", "||", "&&", "mod"];
     if (invalidWords.includes(name)) {
         alert(`You cannot name your variable '${name}', as it is an Impcore keyword.`);
         return false;
@@ -189,6 +189,14 @@ function derive(exp, execute, ticks) {
             return SET(execute, ticks);
         case "while":
             return _WHILE(execute, ticks, true);
+        case "&&":
+            return PRIMITIVE("\\&\\&", execute, ticks, {name : "And",
+                                                   equation : (f, s) => f && s ? 1 : 0,
+                                                   eqString : "$v_1 \\textsc{ \\&\\& } $v_2 = $v_r"});
+        case "||":
+            return PRIMITIVE(exp, execute, ticks, {name : "Or",
+                                                   equation : (f, s) => f || s ? 1 : 0,
+                                                   eqString : "$v_1 \\textsc{ || } $v_2 = $v_r"});
         case "mod":
             return PRIMITIVE(exp, execute, ticks, {name : 'Mod',
                                                    equation: (f, s) => f % s,

@@ -1,4 +1,4 @@
 {
-    "startingFormat" : "\\documentclass[11pt]{article} \\usepackage{alltt} \\usepackage{verbatim} \\usepackage{hyperref} \\usepackage{amsmath} \\usepackage{amssymb} \\usepackage{qtree} \\usepackage{semantic} \\usepackage{mathpartir} \\usepackage{adjustbox} \\begin{document} \\newcommand{\\br}[1]{\\langle #1 \\rangle}\\newcommand{\\state}[4]{\\langle {#1,#2,#3,#4} \\rangle}\\newcommand{\\evalr}[2][{}]{\\state{#2}{\\xi#1}{\\phi}{\\rho#1}}\\begin{adjustbox}{width=\\columnwidth,center}$",
+    "startingFormat" : "\\documentclass[11pt]{article} \\usepackage[T1]{fontenc} \\usepackage{alltt} \\usepackage{verbatim} \\usepackage{hyperref} \\usepackage{amsmath} \\usepackage{amssymb} \\usepackage{qtree} \\usepackage{semantic} \\usepackage{mathpartir} \\usepackage{adjustbox} \\begin{document} \\newcommand{\\br}[1]{\\langle #1 \\rangle}\\newcommand{\\state}[4]{\\langle {#1,#2,#3,#4} \\rangle}\\newcommand{\\evalr}[2][{}]{\\state{#2}{\\xi#1}{\\phi}{\\rho#1}}\\begin{adjustbox}{width=\\columnwidth,center}$",
     "endingFormat" : "$\\end{adjustbox}\\end{document}"
 }
