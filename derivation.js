@@ -11,6 +11,7 @@ let startingFormat, endingFormat;
 let Queue = [];
 const numberDerivationsCap = 50;
 let numberDerivations = 0;
+let ticks = {rho_ticks : 0, xi_ticks : 0};
 
 window.onload = () => {
     document.getElementById("output").style.display = 'none';
@@ -73,6 +74,7 @@ Array.prototype.forEach.call(variables, variableDiv => {
 
 function addVariablesToEnv() {
     xi = {}; rho = {}; // clear environments
+    ticks = {rho_ticks : 0, xi_ticks : 0};
     let environments = {"xi" : xi, "rho" : rho};
     ["rho", "xi"].forEach(env => {
         let variables = document.getElementById(env).value;
@@ -92,18 +94,18 @@ function addVariablesToEnv() {
 //derive
 button.addEventListener('click', () => {
     numberDerivations = 0;
-    addVariablesToEnv();
     let value = input.value.toLowerCase();
     if (value == "" || value == null) {
         alert("Ill-formed Impcore expression");
         return;
     }
+    addVariablesToEnv();
     //clear queue and the environments
     Queue = [];
     addValuesToQueue(value);
     console.log(Queue);
     try {
-        const derivation = derive(Queue.pop(), true, {"rho_ticks" : 0, "xi_ticks" : 0});
+        const derivation = derive(Queue.pop(), true);
         console.log("derivation is", derivation);
         latexOutput.innerText = startingFormat + derivation.derivation + endingFormat;
         window.location.href = "#output";
@@ -167,68 +169,67 @@ function addValuesToQueue(value) {
     }
 }
 // ticks carry the ticks from before
-function derive(exp, execute, ticks) {
+function derive(exp, execute) {
 
     numberDerivations++;
     if (numberDerivations > numberDerivationsCap) {
         throw new Error("Nested derivation is too deep.");
     }
     if (!isNaN(exp)) {
-        console.log(exp + "is a number");
-        return LIT(parseInt(exp), execute, ticks);
+        return LIT(parseInt(exp), execute);
     }
     if (exp.startsWith("$begin")) {
-        return BEGIN(exp, execute, ticks);
+        return BEGIN(exp, execute);
     }
     switch (exp) {
         case "if":
-            return IF(execute, ticks);
+            return IF(execute);
         case "set":
-            return SET(execute, ticks);
+            return SET(execute);
         case "while":
-            return _WHILE(execute, ticks, true);
+            return _WHILE(execute, true);
         case "&&":
-            return PRIMITIVE("\\&\\&", execute, ticks, {name : "And",
+            return PRIMITIVE("\\&\\&", execute, {name : "And",
                                                    equation : (f, s) => f && s ? 1 : 0,
                                                    eqString : "$v_1 \\textsc{ \\&\\& } $v_2 = $v_r"});
         case "||":
-            return PRIMITIVE(exp, execute, ticks, {name : "Or",
+            return PRIMITIVE(exp, execute, {name : "Or",
                                                    equation : (f, s) => f || s ? 1 : 0,
                                                    eqString : "$v_1 \\textsc{ || } $v_2 = $v_r"});
         case "mod":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Mod',
+            return PRIMITIVE(exp, execute, {name : 'Mod',
                                                    equation: (f, s) => f % s,
                                                    eqString : "-2^{31} \\leq $v_1 \\textsc{ mod } $v_2 < 2^{31}"})
         case "+":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Add', 
+            return PRIMITIVE(exp, execute, {name : 'Add', 
                                                    equation : (f, s) => f + s, 
                                                    eqString : "-2^{31} \\leq $v_1 + $v_2 < 2^{31}"});
         case "-":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Sub', 
+            return PRIMITIVE(exp, execute, {name : 'Sub', 
                                                    equation : (f, s) => f - s,
                                                    eqString : "-2^{31} \\leq $v_1 - $v_2 < 2^{31}"});
         case "/":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Div', 
+            return PRIMITIVE(exp, execute, {name : 'Div', 
                                                    equation : (f, s) => Math.floor(f / s),
                                                    eqString : "-2^{31} \\leq $v_1 / $v_2 < 2^{31}"});
         case "*":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Mult', 
+            return PRIMITIVE(exp, execute, {name : 'Mult', 
                                                    equation : (f, s) => f * s,
                                                    eqString : "-2^{31} \\leq $v_1 * $v_2 < 2^{31}"});
         case "=":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Eq', 
+            return PRIMITIVE(exp, execute, {name : 'Eq', 
                                                    equation : (f, s) => f == s ? 1 : 0,
                                                    eqString : "$v_1 ?= $v_2"});
         case ">":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Gt', 
+            return PRIMITIVE(exp, execute,  {name : 'Gt', 
                                                    equation : (f, s) => f > s ? 1 : 0,
                                                    eqString : "$v_1 > $v_2 = $v_r"});
         case "<":
-            return PRIMITIVE(exp, execute, ticks, {name : 'Lt', 
+            return PRIMITIVE(exp, execute, {name : 'Lt', 
                                                     equation : (f, s) => f < s ? 1 : 0,
                                                     eqString : "$v_1 < $v_2 = $v_r"});
         default:
-           return VAR(exp, execute, ticks);
+           return VAR(exp, execute);
     }
 }
 
@@ -255,7 +256,7 @@ function findVarInfo(variable) {
 }
 // END OF UTILITIES
 
-function LIT(number, execute, ticks) {
+function LIT(number, execute) {
     let derivation;
     if (execute) {
         derivation = Latex.LiteralLatex(number, ticks);
@@ -266,7 +267,7 @@ function LIT(number, execute, ticks) {
             "impcore" : [number]};
 }
 
-function VAR(name, execute, ticks) {
+function VAR(name, execute) {
     let variable = findVarInfo(name);
     let derivation;
     console.log(ticks);
@@ -289,7 +290,7 @@ function VAR(name, execute, ticks) {
             "impcore" : [name]};
 }
 
-function IF(execute, ticks) {
+function IF(execute) {
     let derivation, value;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     const condition = derive(Queue.pop(), execute, ticks);
@@ -317,7 +318,7 @@ function IF(execute, ticks) {
             "impcore" : impcore};
 }
 
-function SET(execute, ticks) {
+function SET(execute) {
     let derivation;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     const rhoTicks = Latex.ticks(beforeTicks, 'rho');
@@ -347,7 +348,7 @@ function SET(execute, ticks) {
             "impcore" : ['set'].concat(variable.impcore).concat(exp.impcore)};
 }
 
-function BEGIN(exp, execute, ticks) {
+function BEGIN(exp, execute) {
 
     const n_amnt = parseInt(exp.split("$begin")[1]);
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
@@ -381,7 +382,7 @@ function BEGIN(exp, execute, ticks) {
             "impcore" : impcore};
 }
 
-function PRIMITIVE(exp, execute, ticks, functionInfo) {
+function PRIMITIVE(exp, execute, functionInfo) {
     let derivation;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     const first = derive(Queue.pop(), execute, ticks);
@@ -414,7 +415,7 @@ function PRIMITIVE(exp, execute, ticks, functionInfo) {
 
 
 
-function _WHILE(execute, ticks, first) {
+function _WHILE(execute, first) {
     let derivation, expression;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     let condition = derive(Queue.pop(), execute, ticks);

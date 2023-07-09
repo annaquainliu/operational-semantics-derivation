@@ -8,7 +8,6 @@ class State extends HtmlElement {
     static noMapping = null;
     static noEnvInfo = null;
     constructor(rhoInfo, xiInfo, param) {
-        console.log(xiInfo);
         let xi_env = State.envNotation(State.xi, xiInfo);
         let rho_env = State.envNotation(State.rho, rhoInfo);
         super('div', {}, [], `〈${param},${xi_env},${State.phi},${rho_env}〉`);
@@ -18,21 +17,30 @@ class State extends HtmlElement {
     static unchangedState(param) {
         return new State(State.noEnvInfo, State.noEnvInfo, param);
     }
-
+    // info : {ticks : _, mapping : {name : value}}
     static envNotation(env, info) {
         if (info == null) {
             return env;
         }
         let notation = env + "'".repeat(info.ticks);
         if (info.mapping != null) {
-            const key = Object.keys(info.mapping)[0];
-            notation += `{${key} → ${info.mapping[key]}}`;
+            const name = Object.keys(info.mapping)[0];
+            notation += `{${name} → ${info.mapping[name]}}`;
         }
         return notation;
     }
 
     static envInfo(ticks, mapping) {
         return {ticks : ticks, mapping : mapping};
+    }
+
+    static bothEnvInfo(ticks, rho_map, xi_map) {
+        return {ticks : ticks, mapping : {xi : xi_map, rho : rho_map}};
+    }
+
+    static getTicksFromEnvs(envInfos, env) {
+        const times = envInfos.ticks[`${env}_ticks`];
+        return "'".repeat(times);
     }
 }
 
@@ -71,15 +79,22 @@ class Conditions extends HtmlElement {
         } 
         return this.conditions[n];
     }
+
+    addCondition(htmlElement) {
+        this.conditions.push(htmlElement);
+    }
 }
 
 class InferenceRule extends HtmlElement {
 
-    constructor(name, conditions, initialState, finalState) {
+    constructor(name, conditions, syntax, result, beforeEnv, afterEnv) {
+        const initialState = InferenceRule.makeState(syntax, beforeEnv);
+        const finalState = InferenceRule.makeState(result, afterEnv);
         const judgement = new Judgement(initialState, finalState);
-        const ruleStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 'flex-direction' : 'column'};
-        const ruleAndNameStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 'flex-direction' : 'row',
-                                  'vertical-align' : 'bottom'};
+        const ruleStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 
+                                                            'flex-direction' : 'column'};
+        const ruleAndNameStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 
+                                'flex-direction' : 'row', 'vertical-align' : 'bottom'};
         const ruleElement = new HtmlElement('div', ruleStyle, [conditions, judgement], '');
         const nameElement = new HtmlElement('div', {width : 'fit-content', 'white-space' : 'no-wrap', 
                                                     'align-self' : 'flex-end', 'padding-bottom' : HtmlElement.fontSize, 
@@ -92,104 +107,111 @@ class InferenceRule extends HtmlElement {
         this.finalState = finalState;
         this.result = finalState.param;
     }
-}
 
-class If extends InferenceRule {
-
-    constructor(cond_derive, branch_derive, initialState, finalState) {
-        let condition, name;
-        let conditionResult = cond_derive.result;
-        // const style = {'white-space': 'nowrap', 'align-self' : 'flex-end', 'padding-left' : '1vw', 'padding-right' : '1vw'}
-        if (conditionResult == 0) {
-            condition = HtmlElement.conditionText(`${conditionResult} = 0`);
-            name = "IfFalse";
-        } else {
-            condition = HtmlElement.conditionText(`${conditionResult} ≠ 0`);
-            name = "IfTrue";
-        }
-        const conditions = new Conditions([cond_derive, condition, branch_derive], 'row');
-        super(name, conditions, initialState, finalState);
+    // envInfo : {ticks : ticks, mapping : mapping};
+    // ticks : {rho_ticks : _, xi_ticks : _}
+    // mapping : {xi : JSON, rho : JSON}
+    static makeState(syntax, envInfo) {
+        return new State(State.envInfo(envInfo.ticks.rho_ticks, envInfo.mapping.rho),
+                         State.envInfo(envInfo.ticks.xi_ticks, envInfo.mapping.xi), 
+                         syntax);
     }
 
 }
 
+class If extends InferenceRule {
+
+    constructor(title, syntax, cond_derive, branch_derive, beforeEnv, afterEnv) {
+        let condition;
+        let conditionResult = cond_derive.result;
+        if (conditionResult == 0) {
+            condition = HtmlElement.conditionText(`${conditionResult} = 0`, 'row');
+        } else {
+            condition = HtmlElement.conditionText(`${conditionResult} ≠ 0`, 'row');
+        }
+        const conditions = new Conditions([cond_derive, condition, branch_derive], 'row');
+        super(title, conditions, syntax, branch_derive.result, beforeEnv, afterEnv);
+    }
+    
+}
+
 class Literal extends InferenceRule {
 
-    constructor(initialState, finalState) {
-        super("Literal", new Conditions([HtmlElement.space()], 'row'), initialState, finalState);
+    constructor(value, beforeEnv, afterEnv) {
+        // new Conditions([HtmlElement.space()], 'row'), initialState, finalState
+        super("Literal", new Conditions([HtmlElement.space()], 'row'), `Literal(${value})`, 
+              value, beforeEnv, afterEnv);
     }
 }
 
 class Set extends InferenceRule {
 
-    constructor(env, name, initialState, finalState) {
-        let conditions = Var.scopeCondition(env, name);
-        let inferenceRuleName;
-        if (env == "rho") {
-            inferenceRuleName = 'FormalAssign';
-        } else {
-            inferenceRuleName = 'GlobalAssign';
-        }
-        super(inferenceRuleName, conditions, initialState, finalState);
+    constructor(title, syntax, env, name, exp, beforeEnv, afterEnv) {
+        let conditions = Var.scopeCondition(env, name, beforeEnv);
+        conditions.addCondition(exp);
+        super(title, conditions, syntax, exp.result, beforeEnv, afterEnv);
     }
 }
 
 class Var extends InferenceRule {
 
-    constructor(env, name, initialState, finalState) {
-        let conditions = Var.scopeCondition(env, name);
-        let inferenceRuleName;
-        if (env == "rho") {
-            inferenceRuleName = 'FormalVar';
-        } else {
-            inferenceRuleName = 'GlobalVar';
-        }
-        super(inferenceRuleName, conditions, initialState, finalState);
+    constructor(title, env, name, beforeEnv, afterEnv) {
+        const conditions = Var.scopeCondition(env, name, beforeEnv);
+        const ticks = State.getTicksFromEnvs(afterEnv, env);
+        super(title, conditions, `Var(${name})`, `${State.envs[env]}${ticks}(${name})`, beforeEnv, afterEnv);
     }
 
-    static scopeCondition(env, name) {
+    static scopeCondition(env, name, beforeEnv) {
+        const rhoTicks = State.getTicksFromEnvs(beforeEnv, 'rho');
+        const xiTicks = State.getTicksFromEnvs(beforeEnv, 'xi');
         if (env == "rho") {
-            return new Conditions([HtmlElement.conditionText(`${name} ∈ ${State.rho}`)], 'row');
-    
+            return new Conditions([HtmlElement.conditionText(`${name} ∈ ${State.rho}${rhoTicks}`, 
+                                                            'row')], 'row');
         } else {
-            return new Conditions([HtmlElement.conditionText(`${name} ∉ ${State.rho}`), 
-                                        HtmlElement.conditionText(`${name} ∈ ${State.xi}`)], 'row');
+            return new Conditions([HtmlElement.conditionText(`${name} ∉ ${State.rho}${rhoTicks}`, 'row'), 
+                                  HtmlElement.conditionText(`${name} ∈ ${State.xi}${xiTicks}`, 'row')], 
+                                  'row');
         }
     }
 }
 
-// have not debugged this
-
 class Begin extends InferenceRule {
 
-    constructor(exp_derivations, initialState, finalState) {
+    constructor(title, syntax, result, exp_derivations, beforeEnv, afterEnv) {
         const conditions = new Conditions(exp_derivations, 'column');
-        super('Begin', conditions, initialState, finalState);
+        super(title, conditions, syntax, result, beforeEnv, afterEnv);
     }
 }
 
 class While extends InferenceRule {
 
-    constructor(next_while, cond_derive, exp_derive, initialState, finalState) {
-        let name = "";
+    constructor(title, syntax, next_while, cond_derive, exp_derive, beforeEnv, afterEnv) {
         let conditionsArray = [cond_derive];
         if (cond_derive.result == 0) {
-            name = "WhileEnd";
-            conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} = 0`));
+            conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} = 0`, 'column'));
         } else {
-            name = "WhileIterate";
-            conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} ≠ 0`));
+            conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} ≠ 0`, 'column'));
             conditionsArray.push(exp_derive);
         }
         const conditions = new Conditions(conditionsArray, 'row');
         const nextWhileCondition = new Conditions([next_while, conditions], 'column');
-        super(name, nextWhileCondition, initialState, finalState);
+        super(title, nextWhileCondition, syntax, 0, beforeEnv, afterEnv);
     }   
 }
 
 class Apply extends InferenceRule {
-    constructor() {
-        
+
+    constructor(title, syntax, result, condInfo, beforeEnv, afterEnv) {
+        const functionCondition = HtmlElement.conditionText(`${State.phi}(${condInfo.name}) = Primitive(${condInfo.name})`, 'column');
+        const eqString = HtmlElement.conditionText(condInfo.eqString, 'column');
+        const conditions = new Conditions([functionCondition, condInfo.exp_1, 
+                                            condInfo.exp_2, eqString], 'column');
+        super(title, conditions, syntax, result, beforeEnv, afterEnv);
+    }   
+
+    static makeCondInfo(functionName, eqString, exp1_element, exp2_element) {
+        return {name : functionName, eqString : eqString, 
+                    exp_1 : exp1_element, exp_2 : exp2_element};
     }
 }
 
@@ -202,4 +224,5 @@ export default {InferenceRule: InferenceRule,
                 Set : Set,
                 Var : Var,
                 Begin : Begin,
-                While : While};
+                While : While,
+                Apply : Apply};

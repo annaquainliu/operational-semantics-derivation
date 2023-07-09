@@ -24,12 +24,17 @@ class HtmlElement {
         return new HtmlElement('span', {}, [], text);
     }
 
-    static conditionText(text) {
-        const style = {'white-space': 'nowrap', 'align-self' : 'flex-end', 'padding-left' : '1vw', 'padding-right' : '1vw'};
+    static conditionText(text, orientation) {
+        let alignSelf = 'flex-end';
+        if (orientation == 'column') {
+            alignSelf = 'center';
+        }
+        const style = {'white-space': 'nowrap', 'align-self' : alignSelf, 'padding-left' : '1vw', 'padding-right' : '1vw'};
         return new HtmlElement('div', style, [], text);
     }
 
     get html() {
+        console.log('children is ', this.children);
         let childrenHTML = "";
         this.children.forEach(child => {
             childrenHTML += child.html;

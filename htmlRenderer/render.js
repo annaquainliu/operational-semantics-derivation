@@ -6,29 +6,32 @@ const renderButton = document.querySelector('renderButton');
 const latexOutput = document.querySelector('latexOutput');
 latexOutput.style.fontSize = HtmlElement.fontSize;
 
+// const ticks = {xi_ticks : 0, rho_ticks : 0};
+// const unchangedEnvs = R.State.bothEnvInfo(ticks, R.State.noMapping, R.State.noMapping);
+// const condition = new R.Literal(0, unchangedEnvs, unchangedEnvs);
+// const branch = new R.Literal(1, unchangedEnvs, unchangedEnvs);
+// latexOutput.innerHTML = new R.If('IfTrue', 'If(Literal(0), Literal(0), Literal(1))',
+//                                 condition, branch, unchangedEnvs, unchangedEnvs).html;
 
-const initialState = R.State.unchangedState("If(Var(x), Literal(0), Set(Var(x), 1))");
-const finalState = new R.State(R.State.noEnvInfo, R.State.envInfo(1, R.State.noMapping), 1);
+// const initialTicks = {xi_ticks : 0, rho_ticks : 0};
+// const unchangedEnvs = R.State.bothEnvInfo(initialTicks, R.State.noMapping, R.State.noMapping);
+// const exp = new R.Literal(1, unchangedEnvs, unchangedEnvs);
+// const afterEnv = R.State.bothEnvInfo(initialTicks, {x : 1}, R.State.noMapping);
+// latexOutput.innerHTML = new R.Set(`FormalAssign`, `Set(Var(x), Literal(1))`, 'rho', 'x', 
+//                                                     exp, unchangedEnvs, afterEnv).html;
 
-const ifStatement = new R.If(new R.Var('xi', 'x', R.State.unchangedState('Var(x)'), R.State.unchangedState(0)), 
-                                 new R.Set('xi', 'x', R.State.unchangedState("Set(Var(x))"), 
-                                                        new R.State(R.State.noEnvInfo, R.State.envInfo(0, {x : 1}), 1)), 
-                                 initialState,
-                                 finalState);
+// const initialTicks = {xi_ticks : 1, rho_ticks : 2};
+// const unchangedEnvs = R.State.bothEnvInfo(initialTicks, R.State.noMapping, R.State.noMapping);
+// const afterTicks = {xi_ticks: 2, rho_ticks: 0};
+// const afterEnv = R.State.bothEnvInfo(afterTicks, {x : 3}, R.State.noMapping);
+// latexOutput.innerHTML = new R.Var('GlobalVar', 'xi', 'x', unchangedEnvs, afterEnv).html;
 
-// latexOutput.innerHTML = new R.Begin([new R.Literal(R.State.unchangedState("Literal(0)"), R.State.unchangedState(0)),
-//                                      new R.Literal(R.State.unchangedState("Literal(1)"), R.State.unchangedState(1))],
-//                                      R.State.unchangedState("Begin(Literal(0), Literal(1))"),
-//                                      R.State.unchangedState(1)).html;
-
-// latexOutput.innerHTML = new R.While(new R.While(HtmlElement.empty(), 
-//                                                 new R.Literal(R.State.unchangedState("Literal(0)"), R.State.unchangedState(0)),
-//                                                 ifStatement,
-//                                                 R.State.unchangedState('While(Literal(0), If(Var(x), Literal(0), Set(Var(x), 1)))'),
-//                                                 R.State.unchangedState(0)), 
-//                                     new R.Literal(R.State.unchangedState("Literal(1)"), R.State.unchangedState(1)),
-//                                     ifStatement,
-//                                     R.State.unchangedState('While(Literal(0), If(Var(x), Literal(0), Set(Var(x), 1)))'),
-//                                     R.State.unchangedState(0)).html;
-
-
+const initialTicks = {xi_ticks : 1, rho_ticks : 2};
+const unchangedEnvs = R.State.bothEnvInfo(initialTicks, R.State.noMapping, R.State.noMapping);
+const Literal1 = new R.Literal(0, unchangedEnvs, unchangedEnvs);
+const Literal2 = new R.Literal(2, unchangedEnvs, unchangedEnvs);
+const apply = new R.Apply('ApplyAdd', 'Apply(+, Literal(0), Literal(2))', 2, 
+                                    R.Apply.makeCondInfo('+', `-2^32 <= 2 + 0 < 2^32`, Literal1, Literal2),
+                                    unchangedEnvs,
+                                    unchangedEnvs);
+latexOutput.innerHTML = apply.html;
