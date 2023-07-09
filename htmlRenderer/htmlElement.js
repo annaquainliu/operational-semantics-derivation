@@ -1,5 +1,6 @@
 class HtmlElement {
 
+    static fontSize = '1.3vw';
     //tag : string
     //style : JSON
     //children : [] HTMLElement
@@ -9,6 +10,23 @@ class HtmlElement {
         this.style = style;
         this.children = children;
         this.innerText = innerText;
+    }
+
+    static space() {
+        return new HtmlElement('div', {}, [], '&nbsp;');
+    }
+
+    static empty() {
+        return new HtmlElement('div', {}, [], '');
+    }
+
+    static text(text) {
+        return new HtmlElement('span', {}, [], text);
+    }
+
+    static conditionText(text) {
+        const style = {'white-space': 'nowrap', 'align-self' : 'flex-end', 'padding-left' : '1vw', 'padding-right' : '1vw'};
+        return new HtmlElement('div', style, [], text);
     }
 
     get html() {
