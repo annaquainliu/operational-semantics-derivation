@@ -1,10 +1,6 @@
-import R from './inferenceRules.js';
 import HtmlElement from './htmlElement.js';
-
-const latex = document.querySelector('latex');
-const renderButton = document.querySelector('renderButton');
-const latexOutput = document.querySelector('latexOutput');
-latexOutput.style.fontSize = HtmlElement.fontSize;
+const htmlOutput = document.getElementById("HTMLOutput");
+htmlOutput.style.fontSize = HtmlElement.fontSize;
 
 // const ticks = {xi_ticks : 0, rho_ticks : 0};
 // const unchangedEnvs = R.State.bothEnvInfo(ticks, R.State.noMapping, R.State.noMapping);
@@ -26,12 +22,12 @@ latexOutput.style.fontSize = HtmlElement.fontSize;
 // const afterEnv = R.State.bothEnvInfo(afterTicks, {x : 3}, R.State.noMapping);
 // latexOutput.innerHTML = new R.Var('GlobalVar', 'xi', 'x', unchangedEnvs, afterEnv).html;
 
-const initialTicks = {xi_ticks : 1, rho_ticks : 2};
-const unchangedEnvs = R.State.bothEnvInfo(initialTicks, R.State.noMapping, R.State.noMapping);
-const Literal1 = new R.Literal(0, unchangedEnvs, unchangedEnvs);
-const Literal2 = new R.Literal(2, unchangedEnvs, unchangedEnvs);
-const apply = new R.Apply('ApplyAdd', 'Apply(+, Literal(0), Literal(2))', 2, 
-                                    R.Apply.makeCondInfo('+', `-2^32 <= 2 + 0 < 2^32`, Literal1, Literal2),
-                                    unchangedEnvs,
-                                    unchangedEnvs);
-latexOutput.innerHTML = apply.html;
+// const initialTicks = {xi_ticks : 1, rho_ticks : 2};
+// const unchangedEnvs = R.State.bothEnvInfo(initialTicks, R.State.noMapping, R.State.noMapping);
+// const Literal1 = new R.Literal(0, unchangedEnvs, unchangedEnvs);
+// const Literal2 = new R.Literal(2, unchangedEnvs, unchangedEnvs);
+// const apply = new R.Apply('ApplyAdd', 'Apply(+, Literal(0), Literal(2))', 2, 
+//                                     R.Apply.makeCondInfo('+', `-2^32 <= 2 + 0 < 2^32`, Literal1, Literal2),
+//                                     unchangedEnvs,
+//                                     unchangedEnvs);
+// latexOutput.innerHTML = apply.html;

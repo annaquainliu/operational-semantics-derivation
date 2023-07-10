@@ -40,7 +40,13 @@
     <div class="expression">
         <input id="input" placeholder="Type in an Impcore expression!" style="text-align: center">
     </div>
-    <button id="derive">Derive</button>
+    <div id="deriveButtons">
+        <button id="deriveLatex">Derive<br /><span>To Latex</span></button>
+        <button id="deriveHTML">Derive<br /><span>To HTML</span></button>
+    </div>
+   
+    <div id="HTMLOutput"></div>
+   
     <form action="https://www.overleaf.com/docs" method="post" target="_blank" id="output">
         <textarea rows="8" cols="60" name="snip" id="latex"></textarea>
         <input type="submit" value="Open in Overleaf">

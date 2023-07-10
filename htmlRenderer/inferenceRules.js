@@ -24,8 +24,7 @@ class State extends HtmlElement {
         }
         let notation = env + "'".repeat(info.ticks);
         if (info.mapping != null) {
-            const name = Object.keys(info.mapping)[0];
-            notation += `{${name} → ${info.mapping[name]}}`;
+            notation += `{${info.mapping.name} → ${info.mapping.value}}`;
         }
         return notation;
     }
@@ -33,7 +32,7 @@ class State extends HtmlElement {
     static envInfo(ticks, mapping) {
         return {ticks : ticks, mapping : mapping};
     }
-
+    //  map : {name : name, value : value}
     static bothEnvInfo(ticks, rho_map, xi_map) {
         return {ticks : ticks, mapping : {xi : xi_map, rho : rho_map}};
     }
@@ -121,16 +120,16 @@ class InferenceRule extends HtmlElement {
 
 class If extends InferenceRule {
 
-    constructor(title, syntax, cond_derive, branch_derive, beforeEnv, afterEnv) {
+    constructor(title, syntax, result, cond_derive, cond_result, 
+                                branch_derive, beforeEnv, afterEnv) {
         let condition;
-        let conditionResult = cond_derive.result;
-        if (conditionResult == 0) {
-            condition = HtmlElement.conditionText(`${conditionResult} = 0`, 'row');
+        if (cond_result == 0) {
+            condition = HtmlElement.conditionText(`${cond_result} = 0`, 'row');
         } else {
-            condition = HtmlElement.conditionText(`${conditionResult} ≠ 0`, 'row');
+            condition = HtmlElement.conditionText(`${cond_result} ≠ 0`, 'row');
         }
         const conditions = new Conditions([cond_derive, condition, branch_derive], 'row');
-        super(title, conditions, syntax, branch_derive.result, beforeEnv, afterEnv);
+        super(title, conditions, syntax, result, beforeEnv, afterEnv);
     }
     
 }
@@ -165,11 +164,11 @@ class Var extends InferenceRule {
         const rhoTicks = State.getTicksFromEnvs(beforeEnv, 'rho');
         const xiTicks = State.getTicksFromEnvs(beforeEnv, 'xi');
         if (env == "rho") {
-            return new Conditions([HtmlElement.conditionText(`${name} ∈ ${State.rho}${rhoTicks}`, 
+            return new Conditions([HtmlElement.conditionText(`${name} ∈ dom ${State.rho}${rhoTicks}`, 
                                                             'row')], 'row');
         } else {
-            return new Conditions([HtmlElement.conditionText(`${name} ∉ ${State.rho}${rhoTicks}`, 'row'), 
-                                  HtmlElement.conditionText(`${name} ∈ ${State.xi}${xiTicks}`, 'row')], 
+            return new Conditions([HtmlElement.conditionText(`${name} ∉ dom ${State.rho}${rhoTicks}`, 'row'), 
+                                  HtmlElement.conditionText(`${name} ∈ dom ${State.xi}${xiTicks}`, 'row')], 
                                   'row');
         }
     }
@@ -179,7 +178,7 @@ class Begin extends InferenceRule {
 
     constructor(title, syntax, result, exp_derivations, beforeEnv, afterEnv) {
         const conditions = new Conditions(exp_derivations, 'column');
-        super(title, conditions, syntax, result, beforeEnv, afterEnv);
+        super(title, conditions, `Begin(${syntax})`, result, beforeEnv, afterEnv);
     }
 }
 
@@ -188,9 +187,10 @@ class While extends InferenceRule {
     constructor(title, syntax, next_while, cond_derive, exp_derive, beforeEnv, afterEnv) {
         let conditionsArray = [cond_derive];
         if (cond_derive.result == 0) {
-            conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} = 0`, 'column'));
+            conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} = 0`, 'row'));
+            next_while = HtmlElement.empty();
         } else {
-            conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} ≠ 0`, 'column'));
+            conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} ≠ 0`, 'row'));
             conditionsArray.push(exp_derive);
         }
         const conditions = new Conditions(conditionsArray, 'row');
@@ -201,8 +201,11 @@ class While extends InferenceRule {
 
 class Apply extends InferenceRule {
 
+    static leq = '≤';
     constructor(title, syntax, result, condInfo, beforeEnv, afterEnv) {
         const functionCondition = HtmlElement.conditionText(`${State.phi}(${condInfo.name}) = Primitive(${condInfo.name})`, 'column');
+        condInfo.eqString = condInfo.eqString.replace('\\leq', Apply.leq);
+        condInfo.eqString = condInfo.eqString.replaceAll('^{31}', "<sup>31</sup>");
         const eqString = HtmlElement.conditionText(condInfo.eqString, 'column');
         const conditions = new Conditions([functionCondition, condInfo.exp_1, 
                                             condInfo.exp_2, eqString], 'column');

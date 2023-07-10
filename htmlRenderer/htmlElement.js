@@ -1,6 +1,6 @@
 class HtmlElement {
 
-    static fontSize = '1.3vw';
+    static fontSize = '15px';
     //tag : string
     //style : JSON
     //children : [] HTMLElement
@@ -34,7 +34,6 @@ class HtmlElement {
     }
 
     get html() {
-        console.log('children is ', this.children);
         let childrenHTML = "";
         this.children.forEach(child => {
             childrenHTML += child.html;

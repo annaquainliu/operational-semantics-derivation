@@ -7,12 +7,7 @@ function baseInferenceRule(name, condition, exp_syntax, result, ticks_1, ticks_2
     if (mapping != null) {
         envChanges[mapping.index] += mapping.map;
     }
-
-    return  `\\inferrule*[Right=\\textsc{${name}}]
-                {${condition}}
-                {\\state{\\textsc{${exp_syntax}}}{\\xi${ticks(ticks_1, 'xi')}}{\\phi}{\\rho${ticks(ticks_1, 'rho')}} 
-                    \\Downarrow 
-                \\state{\\textsc{${result}}}{\\xi${envChanges[0]}}{\\phi}{\\rho${envChanges[1]}}}`;
+    return  `\\inferrule*[Right=\\textsc{${name}}]{${condition}}{\\state{\\textsc{${exp_syntax}}}{\\xi${ticks(ticks_1, 'xi')}}{\\phi}{\\rho${ticks(ticks_1, 'rho')}} \\Downarrow \\state{\\textsc{${result}}}{\\xi${envChanges[0]}}{\\phi}{\\rho${envChanges[1]}}}`;
 }
 
 function LiteralLatex(number, ticks) {
@@ -41,8 +36,7 @@ function WhileLatex(title, next_while, condition, exp, eqCondition, ticks_1, tic
     if (exp.derivation == null) {
         exp.derivation = "";
     }
-    return baseInferenceRule(title, `${next_while} \\\\\\\\ ${condition.derivation} \\and ${eqCondition} \\and ${exp.derivation}`, 
-                            `While(${condition.syntax}, ${exp.syntax})`,
+    return baseInferenceRule(title, `${next_while} \\\\\\\\ ${condition.derivation} \\and ${eqCondition} \\and ${exp.derivation}`, `While(${condition.syntax}, ${exp.syntax})`,
                             0,
                             ticks_1,
                             ticks_2,

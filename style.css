@@ -1,5 +1,5 @@
 * {
-    font-family:monospace;
+    font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 body {
@@ -82,18 +82,32 @@ input:focus{
     outline: none;
 }
 
-#derive {
-    text-transform: uppercase;
+#deriveLatex, #deriveHTML {
+    margin: auto;
     margin-top: 10vh;
-    margin-left: 45%;
     margin-bottom: 5vh;
-    width: 10%;
+    width: 20%;
     height: 10vh;
     font-size: 1.5vw;
     font-weight: 100;
     background-color: black;
     color: white;
     scale: 1.3;
+    white-space: nowrap;
+}
+
+#deriveLatex span, #deriveHTML span {
+    margin: 0;
+    padding: 0;
+    font-size: 0.9vw;
+    opacity: 0.8;
+}
+
+#deriveButtons {
+    width: 50%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
 #latex {
@@ -216,4 +230,22 @@ input {
     background-color: black;
     color: white;
     font-size: 1.3vw;
+}
+
+#HTMLOutput {
+    width: fit-content;
+    height: fit-content;
+    scale: 1;
+    color: black;
+    font-weight: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3vw;
+    margin-top: 10vh;
+    margin-bottom: 10vh;
+    text-overflow: ellipsis;
+    /* border:rgb(149, 149, 149) solid 3px; */
+    /* overflow-y: scroll;
+    overflow-x: scroll; */
 }

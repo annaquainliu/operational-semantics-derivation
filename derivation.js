@@ -1,8 +1,16 @@
 const input = document.getElementById('input');
-const button  = document.getElementById('derive');
+const latexButton  = document.getElementById('deriveLatex');
+const HtmlButton = document.getElementById('deriveHTML');
 const latexOutput = document.getElementById("latex");
+const HtmlOutput = document.getElementById('HTMLOutput');
 const variables = document.getElementsByClassName('variable');
+const screenHeight = screen.height;
+const screenWidth = screen.width;
+import HtmlElement from './htmlRenderer/htmlElement.js';
 import Latex from './latexRenderer/latex.js';
+import Rules from './htmlRenderer/inferenceRules.js';
+
+HtmlOutput.style.fontSize = HtmlElement.fontSize;
 
 let xi = {};
 let rho = {};
@@ -15,6 +23,7 @@ let ticks = {rho_ticks : 0, xi_ticks : 0};
 
 window.onload = () => {
     document.getElementById("output").style.display = 'none';
+    HtmlOutput.style.display = 'none';
     fetch('format.json')
         .then(response => response.json())
         .then(result => {
@@ -92,24 +101,28 @@ function addVariablesToEnv() {
     console.log(rho);
 }
 //derive
-button.addEventListener('click', () => {
+[HtmlButton, latexButton].forEach(button => {button.addEventListener('click', () => {
     numberDerivations = 0;
     let value = input.value.toLowerCase();
     if (value == "" || value == null) {
         alert("Ill-formed Impcore expression");
         return;
     }
-    addVariablesToEnv();
-    //clear queue and the environments
-    Queue = [];
-    addValuesToQueue(value);
-    console.log(Queue);
+    addVariablesToEnv(); //add variables
+    addValuesToQueue(value); //add values to queue
+    HtmlOutput.style.scale = '1'; //reset html output scale to 1
+    const renderHTML = button.getAttribute('id') == 'deriveHTML';
     try {
-        const derivation = derive(Queue.pop(), true);
-        console.log("derivation is", derivation);
-        latexOutput.innerText = startingFormat + derivation.derivation + endingFormat;
-        window.location.href = "#output";
-        document.getElementById("output").style.display = 'block';
+        const derivation = derive(Queue.pop(), true, renderHTML);
+        if (renderHTML) {
+            HtmlOutput.innerHTML = derivation.derivation.html;
+            window.location.href = "#HTMLOutput";
+            HtmlOutput.style.display = 'flex';
+        } else {
+            latexOutput.innerText = startingFormat + derivation.derivation + endingFormat;
+            window.location.href = "#output";
+            document.getElementById("output").style.display = 'block';
+        }
     } catch ({name, message}) {
         console.log(message);
         if (message == "Nested derivation is too deep.") {
@@ -119,9 +132,10 @@ button.addEventListener('click', () => {
         }
         return;
     }
-});
+})});
 
 function addValuesToQueue(value) {
+    Queue = [];
     let index = 0;
     let beginIndexes = [];
     queueHelper(value, "", null);
@@ -169,67 +183,67 @@ function addValuesToQueue(value) {
     }
 }
 // ticks carry the ticks from before
-function derive(exp, execute) {
+function derive(exp, execute, html) {
 
     numberDerivations++;
     if (numberDerivations > numberDerivationsCap) {
         throw new Error("Nested derivation is too deep.");
     }
     if (!isNaN(exp)) {
-        return LIT(parseInt(exp), execute);
+        return LIT(parseInt(exp), execute, html);
     }
     if (exp.startsWith("$begin")) {
-        return BEGIN(exp, execute);
+        return BEGIN(exp, execute, html);
     }
     switch (exp) {
         case "if":
-            return IF(execute);
+            return IF(execute, html);
         case "set":
-            return SET(execute);
+            return SET(execute, html);
         case "while":
-            return _WHILE(execute, true);
+            return _WHILE(execute, html);
         case "&&":
-            return PRIMITIVE("\\&\\&", execute, {name : "And",
+            return PRIMITIVE("\\&\\&", execute, html, {name : "And",
                                                    equation : (f, s) => f && s ? 1 : 0,
                                                    eqString : "$v_1 \\textsc{ \\&\\& } $v_2 = $v_r"});
         case "||":
-            return PRIMITIVE(exp, execute, {name : "Or",
+            return PRIMITIVE(exp, execute, html, {name : "Or",
                                                    equation : (f, s) => f || s ? 1 : 0,
                                                    eqString : "$v_1 \\textsc{ || } $v_2 = $v_r"});
         case "mod":
-            return PRIMITIVE(exp, execute, {name : 'Mod',
+            return PRIMITIVE(exp, execute, html, {name : 'Mod',
                                                    equation: (f, s) => f % s,
                                                    eqString : "-2^{31} \\leq $v_1 \\textsc{ mod } $v_2 < 2^{31}"})
         case "+":
-            return PRIMITIVE(exp, execute, {name : 'Add', 
+            return PRIMITIVE(exp, execute, html, {name : 'Add', 
                                                    equation : (f, s) => f + s, 
                                                    eqString : "-2^{31} \\leq $v_1 + $v_2 < 2^{31}"});
         case "-":
-            return PRIMITIVE(exp, execute, {name : 'Sub', 
+            return PRIMITIVE(exp, execute, html, {name : 'Sub', 
                                                    equation : (f, s) => f - s,
                                                    eqString : "-2^{31} \\leq $v_1 - $v_2 < 2^{31}"});
         case "/":
-            return PRIMITIVE(exp, execute, {name : 'Div', 
+            return PRIMITIVE(exp, execute, html, {name : 'Div', 
                                                    equation : (f, s) => Math.floor(f / s),
                                                    eqString : "-2^{31} \\leq $v_1 / $v_2 < 2^{31}"});
         case "*":
-            return PRIMITIVE(exp, execute, {name : 'Mult', 
+            return PRIMITIVE(exp, execute, html, {name : 'Mult', 
                                                    equation : (f, s) => f * s,
                                                    eqString : "-2^{31} \\leq $v_1 * $v_2 < 2^{31}"});
         case "=":
-            return PRIMITIVE(exp, execute, {name : 'Eq', 
+            return PRIMITIVE(exp, execute, html, {name : 'Eq', 
                                                    equation : (f, s) => f == s ? 1 : 0,
                                                    eqString : "$v_1 ?= $v_2"});
         case ">":
-            return PRIMITIVE(exp, execute,  {name : 'Gt', 
+            return PRIMITIVE(exp, execute, html, {name : 'Gt', 
                                                    equation : (f, s) => f > s ? 1 : 0,
                                                    eqString : "$v_1 > $v_2 = $v_r"});
         case "<":
-            return PRIMITIVE(exp, execute, {name : 'Lt', 
+            return PRIMITIVE(exp, execute, html, {name : 'Lt', 
                                                     equation : (f, s) => f < s ? 1 : 0,
                                                     eqString : "$v_1 < $v_2 = $v_r"});
         default:
-           return VAR(exp, execute);
+           return VAR(exp, execute, html);
     }
 }
 
@@ -256,10 +270,15 @@ function findVarInfo(variable) {
 }
 // END OF UTILITIES
 
-function LIT(number, execute) {
+function LIT(number, execute, html) {
     let derivation;
     if (execute) {
-        derivation = Latex.LiteralLatex(number, ticks);
+        if (html) {
+            const unchangedEnvs = Rules.State.bothEnvInfo(ticks, null, null);
+            derivation = new Rules.Literal(number, unchangedEnvs, unchangedEnvs);
+        } else {
+            derivation = Latex.LiteralLatex(number, ticks);
+        }
     }
     return {"syntax" : `Literal(${number})`, 
             "value" : number,
@@ -267,19 +286,22 @@ function LIT(number, execute) {
             "impcore" : [number]};
 }
 
-function VAR(name, execute) {
+function VAR(name, execute, html) {
     let variable = findVarInfo(name);
     let derivation;
-    console.log(ticks);
     const rhoTicks = Latex.ticks(ticks, 'rho');
     const xiTicks = Latex.ticks(ticks, 'xi');
     if (execute) {
+        const envInfo = Rules.State.bothEnvInfo(ticks, null, null);
         if (variable.env == "rho") {
-            derivation = Latex.VarLatex('FormalVar', name, `${name} \\in dom \\rho${rhoTicks}`, 
-                                        `$\\rho${rhoTicks}(${name})$`, ticks);
+            derivation = html ? new Rules.Var('FormalVar', variable.env, name, envInfo, envInfo) 
+                              : Latex.VarLatex('FormalVar', name, `${name} \\in dom \\rho${rhoTicks}`, 
+                                                `$\\rho${rhoTicks}(${name})$`, ticks);
         } 
-        else if (variable.env == "xi") {
-            derivation = Latex.VarLatex('GlobalVar', name, `${name} \\notin dom \\rho${rhoTicks} \\and ${name} \\in \\xi${xiTicks}`,
+        else {
+            derivation = html ? new Rules.Var('GlobalVar', variable.env, name, envInfo, envInfo)
+                              : Latex.VarLatex('GlobalVar', name, 
+                                        `${name} \\notin dom \\rho${rhoTicks} \\and ${name} \\in dom \\xi${xiTicks}`,
                                         `$\\xi${xiTicks}(${name})$`, ticks);
         }
     }
@@ -290,27 +312,33 @@ function VAR(name, execute) {
             "impcore" : [name]};
 }
 
-function IF(execute) {
+function IF(execute, html) {
     let derivation, value;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
-    const condition = derive(Queue.pop(), execute, ticks);
-    const trueCase = derive(Queue.pop(), condition.value != 0 && execute, ticks);
-    const falseCase = derive(Queue.pop(), condition.value == 0 && execute, ticks);
+    const condition = derive(Queue.pop(), execute, html);
+    const trueCase = derive(Queue.pop(), condition.value != 0 && execute, html);
+    const falseCase = derive(Queue.pop(), condition.value == 0 && execute, html);
     const syntax = `If(${condition.syntax}, ${trueCase.syntax}, ${falseCase.syntax})`;
      //ticks obj is changed by reference
     if (execute) {
+        const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
+        const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
         if (condition.value == 0) {
             value = falseCase.value;
-            derivation = Latex.IfLatex("IfFalse", syntax, condition.derivation, 
+            derivation = html ? new Rules.If('IfFalse', syntax, value, condition.derivation, 
+                                condition.value, falseCase.derivation, beforeEnv, afterEnv)
+                              : Latex.IfLatex("IfFalse", syntax, condition.derivation, 
                                         `${condition.value} = 0`, falseCase.derivation, 
                                         value, beforeTicks, ticks);
         } else {
             value = trueCase.value;
-            derivation = Latex.IfLatex("IfTrue", syntax, condition.derivation, 
+            derivation = html ? new Rules.If('IfTrue', syntax, value, condition.derivation,
+                                condition.value, trueCase.derivation, beforeEnv, afterEnv)
+                              : Latex.IfLatex("IfTrue", syntax, condition.derivation, 
                                         `${condition.value} \\neq 0`, trueCase.derivation, 
                                         value, beforeTicks, ticks);
         }
-    }   
+    }
     let impcore = ['if'].concat(condition.impcore).concat(trueCase.impcore).concat(falseCase.impcore);
     return {"syntax" : syntax, 
             "value" : value, 
@@ -318,75 +346,87 @@ function IF(execute) {
             "impcore" : impcore};
 }
 
-function SET(execute) {
+function SET(execute, html) {
     let derivation;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     const rhoTicks = Latex.ticks(beforeTicks, 'rho');
     const xiTicks = Latex.ticks(beforeTicks, 'xi');
-    const variable = derive(Queue.pop(), execute, ticks); 
-    const exp = derive(Queue.pop(), execute, ticks);
+    const variable = derive(Queue.pop(), execute, html); 
+    const exp = derive(Queue.pop(), execute, html);
     const env = findVarInfo(variable.name).env;
+    const syntax = `Set(${variable.syntax}, ${exp.syntax})`;
     if (execute) {
+        let conditions, latexMap, title, afterEnv;
+        const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
         if (env == "xi") {
             const scope = `${variable.name} \\notin dom \\rho${rhoTicks} \\and ${variable.name} \\in dom \\xi${xiTicks}`;
-            const conditions = scope + `\\and ${exp.derivation}`;
-            const mapping = {index : 0, map :  `\\{${variable.name} \\mapsto ${exp.value}\\}`};
-            derivation = Latex.SetLatex('GlobalAssign', conditions, exp, variable, mapping, beforeTicks, ticks);
+            conditions = scope + `\\and ${exp.derivation}`;
+            latexMap = {index : 0, map :  `\\{${variable.name} \\mapsto ${exp.value}\\}`};
+            title = 'GlobalAssign';
+            afterEnv = Rules.State.bothEnvInfo(ticks, null, {name: variable.name, value: exp.value});
         } else {
             const scope = `${variable.name} \\in dom \\rho${rhoTicks}`;
-            const conditions = scope + `\\and ${exp.derivation}`;
-            const mapping = {index : 1, map : `\\{${variable.name} \\mapsto ${exp.value}\\}`};
-            derivation = Latex.SetLatex('FormalAssign', conditions, exp, variable, mapping, beforeTicks, ticks);
+            conditions = scope + `\\and ${exp.derivation}`;
+            latexMap = {index : 1, map : `\\{${variable.name} \\mapsto ${exp.value}\\}`};
+            title = 'FormalAssign';
+            afterEnv = Rules.State.bothEnvInfo(ticks, {name: variable.name, value: exp.value}, null);
         }
+        derivation = html ? new Rules.Set(title, syntax, env, variable.name, exp.derivation, beforeEnv, afterEnv)
+                          : Latex.SetLatex(title, conditions, exp, variable, latexMap, beforeTicks, ticks);
         let environment = {"rho" : rho, "xi" : xi};
         environment[env][variable.name] = exp.value;
         ticks[`${env}_ticks`]++;
     }
-    return {"syntax" : `Set(${variable.syntax}, ${exp.syntax})`,
+    return {"syntax" : syntax,
             "value" : exp.value,
             "derivation" : derivation,
             "impcore" : ['set'].concat(variable.impcore).concat(exp.impcore)};
 }
 
-function BEGIN(exp, execute) {
 
+
+function BEGIN(exp, execute, html) {
     const n_amnt = parseInt(exp.split("$begin")[1]);
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     let value = 0;
     let exps_syntax = "";
     let derivation, expression;
-    let exps_derivations = "";
+    let exps_derivations = html ? [] : "";
     let impcore = [exp];
     for (let i = 0; i < n_amnt; i++) {
-        expression = derive(Queue.pop(), execute, ticks);
+        expression = derive(Queue.pop(), execute, html);
         exps_syntax += expression.syntax + ", ";
-        exps_derivations += "  \\\\\\\\ " + expression.derivation;
+        html ? exps_derivations.push(expression.derivation) : 
+               exps_derivations += "  \\\\\\\\ " + expression.derivation;
         impcore = impcore.concat(expression.impcore);
     }
     exps_syntax = exps_syntax.substring(0, exps_syntax.length - 2);
-    const syntax = `Begin(${exps_syntax})`;
-
+    const syntax = exps_syntax;
     if (execute) {
+        const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
+        const afterEnv =  Rules.State.bothEnvInfo(ticks, null, null);
         if (n_amnt == 0) {
-            derivation = Latex.BeginLatex('EmptyBegin', " \\ ", syntax, 0, beforeTicks, ticks);
+            derivation = html ? new Rules.Begin('EmptyBegin', syntax, 0, exps_derivations, beforeEnv, afterEnv)
+                              : Latex.BeginLatex('EmptyBegin', " \\ ", syntax, 0, beforeTicks, ticks);
         }
         else {
             value = expression.value;
-            derivation = Latex.BeginLatex('Begin', exps_derivations, syntax, value, beforeTicks, ticks);
+            derivation = html ? new Rules.Begin('Begin', syntax, value, exps_derivations, beforeEnv, afterEnv)
+                              : Latex.BeginLatex('Begin', exps_derivations, syntax, value, beforeTicks, ticks);
         }
     }
-
-    return {"syntax" : syntax,
-            "value" : value,
-            "derivation" : derivation,
+    return {"syntax" : syntax, 
+            "value" : value, 
+            "derivation" : derivation, 
             "impcore" : impcore};
 }
 
-function PRIMITIVE(exp, execute, functionInfo) {
+function PRIMITIVE(exp, execute, html, functionInfo) {
     let derivation;
+    let title = `Apply${functionInfo.name}`;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
-    const first = derive(Queue.pop(), execute, ticks);
-    const second = derive(Queue.pop(), execute, ticks);
+    const first = derive(Queue.pop(), execute, html);
+    const second = derive(Queue.pop(), execute, html);
     const result = functionInfo.equation(first.value, second.value);
     const syntax = `Apply(${exp}, ${first.syntax}, ${second.syntax})`;
     let eqString = functionInfo.eqString.replace('$v_1', first.value).replace("$v_2", second.value);
@@ -394,18 +434,20 @@ function PRIMITIVE(exp, execute, functionInfo) {
         if (exp == "=") {
             if (result == 0) {
                 eqString = eqString.replace('?=', '\\neq');
-                derivation = Latex.ApplyLatex('ApplyEqFalse', exp, first, second, 
-                                                eqString, syntax, result, beforeTicks, ticks);
+                title = 'ApplyEqFalse';
                 
             } else {
                 eqString = eqString.replace('?=', '=');
-                derivation = Latex.ApplyLatex('ApplyEqTrue', exp, first, second, 
-                                                eqString, syntax, result, beforeTicks, ticks);
+                title = 'ApplyEqTrue';
             }
-        } else {
-            derivation = Latex.ApplyLatex(`Apply${functionInfo.name}`, exp, first, second,
-                                            eqString, syntax, result, beforeTicks, ticks);
         }
+        const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
+        const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
+        derivation = html ? new Rules.Apply(title, syntax, result, 
+                            Rules.Apply.makeCondInfo(exp, eqString, first.derivation, second.derivation),
+                            beforeEnv, afterEnv)
+                          : Latex.ApplyLatex(title, exp, first, second,
+                                             eqString, syntax, result, beforeTicks, ticks);
     }
     return {"syntax" : syntax,
             "value" : result,
@@ -413,37 +455,46 @@ function PRIMITIVE(exp, execute, functionInfo) {
             'impcore' : [exp].concat(first.impcore).concat(second.impcore)};
 }
 
-
-
-function _WHILE(execute, first) {
-    let derivation, expression;
+function _WHILE(execute, html) {
+    let derivation;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
-    let condition = derive(Queue.pop(), execute, ticks);
+    const cond = derive(Queue.pop(), execute, html);
+    const exp = derive(Queue.pop(), cond.value != 0 && execute, html);
+    const syntax = `While(${cond.syntax}, ${exp.syntax})`;
     const beforeQueue = Queue;
     if (execute) {
-        expression = derive(Queue.pop(), condition.value != 0, ticks);
-        if (condition.value == 0) {
-            derivation = Latex.WhileLatex(`WhileEnd`, "", condition, expression, 
-                                            `${condition.value} = 0`, beforeTicks, ticks);
-        } 
-        else {
-            Queue = condition.impcore.concat(expression.impcore).reverse();
-            if (first) {
-                derivation = Latex.WhileLatex(`WhileIterate`, _WHILE(execute, ticks, false).derivation, 
-                                            condition, expression, `${condition.value} \\neq 0`, beforeTicks, ticks);
-            } else {
-                const afterTicks = JSON.parse(JSON.stringify(ticks));
-                derivation = Latex.WhileLatex(`WhileIterate`, _WHILE(execute, ticks, false).derivation, 
-                                            condition, expression, `${condition.value} \\neq 0`, beforeTicks, afterTicks);
-            }
-        }
+        derivation = html ? whileHTML(cond, exp, syntax, beforeTicks)
+                          : whileLatex(cond, exp, beforeTicks);
     } 
-    else {
-        expression = derive(Queue.pop(), false, ticks);
-    }
     Queue = beforeQueue;
-    return {"syntax" : `While(${condition.syntax}, ${expression.syntax})`,
+    return {"syntax" : syntax,
             "value" : 0,
             "derivation": derivation,
-            "impcore" : ['while'].concat(condition.impcore).concat(expression.impcore)};
+            "impcore" : ['while'].concat(cond.impcore).concat(exp.impcore)};
+}
+
+function whileHTML(cond, exp, syntax, beforeTicks) {
+    const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
+    if (cond.value == 0) {
+        const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
+        return new Rules.While(`WhileEnd`, syntax, "", cond.derivation, 
+                                    exp.derivation, beforeEnv, afterEnv);
+    } else {
+        Queue = cond.impcore.concat(exp.impcore).reverse();
+        const nextWhile = _WHILE(true, true).derivation;
+        const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
+        return new Rules.While('WhileIterate', syntax, nextWhile, 
+                                cond.derivation, exp.derivation, beforeEnv, afterEnv);
+    }
+}
+
+function whileLatex(cond, exp, beforeTicks) {
+    if (cond.value == 0) {
+        return Latex.WhileLatex('WhileEnd', "", cond, exp, 
+                                `${cond.value} = 0`, beforeTicks, ticks);
+    } else {
+        Queue = cond.impcore.concat(exp.impcore).reverse();
+        return Latex.WhileLatex(`WhileIterate`, _WHILE(true, false).derivation, 
+                                cond, exp, `${cond.value} \\neq 0`, beforeTicks, ticks);
+    }
 }
