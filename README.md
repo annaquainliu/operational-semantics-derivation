@@ -57,9 +57,13 @@ $
 $
 \end{adjustbox}`
 
-Image of Output:
+Image of Latex Output:
 
 ![image (3)](https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/1a1fd150-860c-4ab2-8c2a-e99c14fc7839)
+
+HTML Output:
+
+<img width="909" alt="image" src="https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/a0801ad1-b5ed-4173-ab5e-ce52bb5fa523">
 
 ## Limitations
 
