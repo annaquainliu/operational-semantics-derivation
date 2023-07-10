@@ -4,8 +4,6 @@ const HtmlButton = document.getElementById('deriveHTML');
 const latexOutput = document.getElementById("latex");
 const HtmlOutput = document.getElementById('HTMLOutput');
 const variables = document.getElementsByClassName('variable');
-const screenHeight = screen.height;
-const screenWidth = screen.width;
 import HtmlElement from './htmlRenderer/htmlElement.js';
 import Latex from './latexRenderer/latex.js';
 import Rules from './htmlRenderer/inferenceRules.js';
@@ -23,7 +21,7 @@ let ticks = {rho_ticks : 0, xi_ticks : 0};
 
 window.onload = () => {
     document.getElementById("output").style.display = 'none';
-    HtmlOutput.style.display = 'none';
+    document.getElementById('HTMLOuter').style.display = 'none';
     fetch('format.json')
         .then(response => response.json())
         .then(result => {
@@ -117,7 +115,7 @@ function addVariablesToEnv() {
         if (renderHTML) {
             HtmlOutput.innerHTML = derivation.derivation.html;
             window.location.href = "#HTMLOutput";
-            HtmlOutput.style.display = 'flex';
+            document.getElementById('HTMLOuter').style.display = 'flex';
         } else {
             latexOutput.innerText = startingFormat + derivation.derivation + endingFormat;
             window.location.href = "#output";

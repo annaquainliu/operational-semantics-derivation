@@ -1,6 +1,6 @@
 class HtmlElement {
 
-    static fontSize = '15px';
+    static fontSize = '20px';
     //tag : string
     //style : JSON
     //children : [] HTMLElement

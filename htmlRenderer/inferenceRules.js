@@ -91,9 +91,9 @@ class InferenceRule extends HtmlElement {
         const finalState = InferenceRule.makeState(result, afterEnv);
         const judgement = new Judgement(initialState, finalState);
         const ruleStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 
-                                                            'flex-direction' : 'column'};
+                           'flex-direction' : 'column', 'white-space': 'nowrap'};
         const ruleAndNameStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 
-                                'flex-direction' : 'row', 'vertical-align' : 'bottom'};
+                                'flex-direction' : 'row', 'vertical-align' : 'bottom', 'white-space': 'nowrap'};
         const ruleElement = new HtmlElement('div', ruleStyle, [conditions, judgement], '');
         const nameElement = new HtmlElement('div', {width : 'fit-content', 'white-space' : 'no-wrap', 
                                                     'align-self' : 'flex-end', 'padding-bottom' : HtmlElement.fontSize, 
