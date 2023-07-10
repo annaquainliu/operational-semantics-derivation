@@ -154,18 +154,18 @@ class Set extends InferenceRule {
 
 class Var extends InferenceRule {
 
-    constructor(title, env, name, beforeEnv, afterEnv) {
+    constructor(title, env, name, value, beforeEnv, afterEnv) {
         const conditions = Var.scopeCondition(env, name, beforeEnv);
         const ticks = State.getTicksFromEnvs(afterEnv, env);
         super(title, conditions, `Var(${name})`, `${State.envs[env]}${ticks}(${name})`, beforeEnv, afterEnv);
+        this.result = value;
     }
 
     static scopeCondition(env, name, beforeEnv) {
         const rhoTicks = State.getTicksFromEnvs(beforeEnv, 'rho');
         const xiTicks = State.getTicksFromEnvs(beforeEnv, 'xi');
         if (env == "rho") {
-            return new Conditions([HtmlElement.conditionText(`${name} ∈ dom ${State.rho}${rhoTicks}`, 
-                                                            'row')], 'row');
+            return new Conditions([HtmlElement.conditionText(`${name} ∈ dom ${State.rho}${rhoTicks}`, 'row')], 'row');
         } else {
             return new Conditions([HtmlElement.conditionText(`${name} ∉ dom ${State.rho}${rhoTicks}`, 'row'), 
                                   HtmlElement.conditionText(`${name} ∈ dom ${State.xi}${xiTicks}`, 'row')], 
@@ -202,19 +202,32 @@ class While extends InferenceRule {
 class Apply extends InferenceRule {
 
     static leq = '≤';
+    static neq = '≠';
     constructor(title, syntax, result, condInfo, beforeEnv, afterEnv) {
         const functionCondition = HtmlElement.conditionText(`${State.phi}(${condInfo.name}) = Primitive(${condInfo.name})`, 'column');
-        condInfo.eqString = condInfo.eqString.replace('\\leq', Apply.leq);
-        condInfo.eqString = condInfo.eqString.replaceAll('^{31}', "<sup>31</sup>");
-        const eqString = HtmlElement.conditionText(condInfo.eqString, 'column');
+        let eqText = Apply.makeEqString(condInfo.name, condInfo.exp_1.result, condInfo.exp_2.result, result);
+        const eqString = HtmlElement.conditionText(eqText, 'column');
         const conditions = new Conditions([functionCondition, condInfo.exp_1, 
                                             condInfo.exp_2, eqString], 'column');
         super(title, conditions, syntax, result, beforeEnv, afterEnv);
     }   
 
-    static makeCondInfo(functionName, eqString, exp1_element, exp2_element) {
-        return {name : functionName, eqString : eqString, 
-                    exp_1 : exp1_element, exp_2 : exp2_element};
+    static makeCondInfo(functionName, exp1_element, exp2_element) {
+        return {name : functionName, exp_1 : exp1_element, exp_2 : exp2_element};
+    }
+
+    static makeEqString(name, value_1, value_2, result) {
+        if (name == "+" || name == "/" || name == "*" || name == "-" || name == "mod") {
+            return `-2<sup>31</sup> ${Apply.leq} ${value_1} ${name} ${value_2} < 2<sup>31</sup>`;
+        }
+        else if (name == "||" || name == "&&") {
+            return `${value_1} ${name} ${value_2} = ${result}`
+        }
+        else if (name == "=") {
+            return result == 0 ? `${value_1} ${Apply.neq} ${value_2}` : `${value_1} = ${value_2}`
+        } else {
+            return `${value_1} ${name} ${value_2} = ${result}`;
+        }
     }
 }
 

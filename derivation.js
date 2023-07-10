@@ -201,7 +201,7 @@ function derive(exp, execute, html) {
         case "while":
             return _WHILE(execute, html);
         case "&&":
-            return PRIMITIVE("\\&\\&", execute, html, {name : "And",
+            return PRIMITIVE(exp, execute, html, {name : "And",
                                                    equation : (f, s) => f && s ? 1 : 0,
                                                    eqString : "$v_1 \\textsc{ \\&\\& } $v_2 = $v_r"});
         case "||":
@@ -292,12 +292,12 @@ function VAR(name, execute, html) {
     if (execute) {
         const envInfo = Rules.State.bothEnvInfo(ticks, null, null);
         if (variable.env == "rho") {
-            derivation = html ? new Rules.Var('FormalVar', variable.env, name, envInfo, envInfo) 
+            derivation = html ? new Rules.Var('FormalVar', variable.env, name, variable.value, envInfo, envInfo) 
                               : Latex.VarLatex('FormalVar', name, `${name} \\in dom \\rho${rhoTicks}`, 
                                                 `$\\rho${rhoTicks}(${name})$`, ticks);
         } 
         else {
-            derivation = html ? new Rules.Var('GlobalVar', variable.env, name, envInfo, envInfo)
+            derivation = html ? new Rules.Var('GlobalVar', variable.env, name, variable.value, envInfo, envInfo)
                               : Latex.VarLatex('GlobalVar', name, 
                                         `${name} \\notin dom \\rho${rhoTicks} \\and ${name} \\in dom \\xi${xiTicks}`,
                                         `$\\xi${xiTicks}(${name})$`, ticks);
@@ -420,16 +420,19 @@ function BEGIN(exp, execute, html) {
 }
 
 function PRIMITIVE(exp, execute, html, functionInfo) {
+    const symbol = exp == "&&" ? "\\&\\&" : exp;
     let derivation;
     let title = `Apply${functionInfo.name}`;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     const first = derive(Queue.pop(), execute, html);
     const second = derive(Queue.pop(), execute, html);
     const result = functionInfo.equation(first.value, second.value);
-    const syntax = `Apply(${exp}, ${first.syntax}, ${second.syntax})`;
-    let eqString = functionInfo.eqString.replace('$v_1', first.value).replace("$v_2", second.value);
+    const syntax = `Apply(${html ? exp : symbol}, ${first.syntax}, ${second.syntax})`;
+    let eqString = functionInfo.eqString.replace('$v_1', first.value)
+                                        .replace("$v_2", second.value)
+                                        .replace("$v_r", result);
     if (execute) {
-        if (exp == "=") {
+        if (symbol == "=") {
             if (result == 0) {
                 eqString = eqString.replace('?=', '\\neq');
                 title = 'ApplyEqFalse';
@@ -442,9 +445,9 @@ function PRIMITIVE(exp, execute, html, functionInfo) {
         const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
         const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
         derivation = html ? new Rules.Apply(title, syntax, result, 
-                            Rules.Apply.makeCondInfo(exp, eqString, first.derivation, second.derivation),
+                            Rules.Apply.makeCondInfo(exp, first.derivation, second.derivation),
                             beforeEnv, afterEnv)
-                          : Latex.ApplyLatex(title, exp, first, second,
+                          : Latex.ApplyLatex(title, symbol, first, second,
                                              eqString, syntax, result, beforeTicks, ticks);
     }
     return {"syntax" : syntax,
