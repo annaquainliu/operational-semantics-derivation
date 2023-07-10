@@ -1,6 +1,6 @@
 # Operational Semantics Derivation Program
 
-This [website](https://annaquainliu.github.io/operational-semantics-derivation/) hosts a JavaScript program that takes in any Impcore expression and outputs its full derivation in Latex.
+This [website](https://annaquainliu.github.io/operational-semantics-derivation/) hosts a JavaScript program that takes in any Impcore expression and outputs its full derivation in Latex code AND in my own HTML renderer!
 
 Made this for pure fun! 😄
 
