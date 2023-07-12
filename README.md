@@ -68,3 +68,9 @@ HTML Output:
 ## Limitations
 
  This program does not allow the user to declare any functions (yet!).
+
+
+ ### TODO:
+ - Fix empty begin spacing
+ - Add feature to edit environments
+ - Add user defined functions
