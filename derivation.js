@@ -71,13 +71,14 @@ function addVariablesToEnv() {
             window.location.href = "#output";
             document.getElementById("output").style.display = 'block';
         }
-    } catch ({name, message}) {
-        console.log(message);
-        if (message == "Nested derivation is too deep.") {
-            alert(`The derivation has over the max amount of layers (${numberDerivationsCap}).`);
-        } else {
-            alert(`Improper Impcore expression!`);
-        }
+    } catch (error) {
+        console.log(error);
+        // console.log(message);
+        // if (message == "Nested derivation is too deep.") {
+        //     alert(`The derivation has over the max amount of layers (${numberDerivationsCap}).`);
+        // } else {
+        //     alert(`Improper Impcore expression!`);
+        // }
         return;
     }
 })});
@@ -261,37 +262,50 @@ function VAR(name, execute, html) {
 }
 
 function IF(execute, html) {
-    let derivation, value;
+    let derivation, title, branch;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     const condition = derive(Queue.pop(), execute, html);
     const trueCase = derive(Queue.pop(), condition.value != 0 && execute, html);
     const falseCase = derive(Queue.pop(), condition.value == 0 && execute, html);
     const syntax = `If(${condition.syntax}, ${trueCase.syntax}, ${falseCase.syntax})`;
+    if (condition.value == 0) {
+        branch = falseCase;
+        title = "IfFalse";
+    } else {
+        branch = trueCase;
+        title = "IfTrue";
+    }
      //ticks obj is changed by reference
     if (execute) {
-        const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
-        const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
-        if (condition.value == 0) {
-            value = falseCase.value;
-            derivation = html ? new Rules.If('IfFalse', syntax, value, condition.derivation, 
-                                condition.value, falseCase.derivation, beforeEnv, afterEnv)
-                              : Latex.IfLatex("IfFalse", syntax, condition.derivation, 
-                                        `${condition.value} = 0`, falseCase.derivation, 
-                                        value, beforeTicks, ticks);
-        } else {
-            value = trueCase.value;
-            derivation = html ? new Rules.If('IfTrue', syntax, value, condition.derivation,
-                                condition.value, trueCase.derivation, beforeEnv, afterEnv)
-                              : Latex.IfLatex("IfTrue", syntax, condition.derivation, 
-                                        `${condition.value} \\neq 0`, trueCase.derivation, 
-                                        value, beforeTicks, ticks);
-        }
+        derivation = html ? ifHTML(title, syntax, condition, branch, beforeTicks)
+                          : ifLatex(title, condition, syntax, branch, beforeTicks);
     }
     let impcore = ['if'].concat(condition.impcore).concat(trueCase.impcore).concat(falseCase.impcore);
     return {"syntax" : syntax, 
-            "value" : value, 
+            "value" : branch.value, 
             "derivation" : derivation,
             "impcore" : impcore};
+}
+
+function ifLatex(title, condition, syntax, branch, beforeTicks) {
+    let stringCondition;
+    if (condition.value == 0) {
+        stringCondition = `0 = 0`;
+    } else {
+        stringCondition = `${condition.value} \\neq 0`;
+    }
+
+    return Latex.IfLatex(title, syntax, condition.derivation, 
+        stringCondition, branch.derivation, 
+        branch.value, beforeTicks, ticks);
+}
+
+function ifHTML(title, syntax, condition, branch, beforeTicks) {
+    const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
+    const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
+
+    return new Rules.If(title, syntax, branch.value, condition.derivation, 
+                condition.value, branch.derivation, beforeEnv, afterEnv);
 }
 
 function SET(execute, html) {
