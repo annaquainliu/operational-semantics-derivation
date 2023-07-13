@@ -34,7 +34,7 @@ function addVariablesToEnv() {
     xi = {}; rho = {}; // clear environments
     ticks = {rho_ticks : 0, xi_ticks : 0};
     let environments = {"xi" : xi, "rho" : rho};
-    ["rho", "xi"].forEach(env => {
+    ["xi"].forEach(env => {
         const variables = document.getElementById(env).getElementsByClassName('varAndvalue');
         Array.prototype.forEach.call(variables, mapping => {
             const fields = mapping.innerText.replaceAll(" ", "").split('→');

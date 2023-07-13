@@ -1,13 +1,52 @@
-const variables = document.getElementsByClassName('variable');
+const invalidWords = ['begin', 'if', 'set', 'while', 'val', '+', '-', "/", "=", "*", "||", "&&", "mod"];
+addListenersForGlobal();
+addListenersForFunction();
 
-Array.prototype.forEach.call(variables, variableDiv => {
-    const variableInfo = variableDiv.getElementsByClassName('variable_info')[0];
-    const addVariable = variableDiv.getElementsByClassName('add_variable')[0];
-    const button = variableDiv.getElementsByTagName('button')[0];
-    const env = variableDiv.getAttribute('value');
-    const nameField = variableDiv.querySelector("input[name='name']");
-    const valueField = variableDiv.querySelector("input[name='value']");
+function addListenersForGlobal() {
+    const variable = document.getElementById('addGlobal');
+    const variableInfo = variable.getElementsByClassName('variable_info')[0];
+    const addVariable = variable.getElementsByClassName('add_variable')[0];
+    const button = variable.getElementsByTagName('button')[0];
+    const env = 'xi';
+    const nameField = variable.querySelector("input[name='name']");
+    const valueField = variable.querySelector("input[name='value']");
 
+    addVariables(addVariable, variableInfo);
+    button.addEventListener('click', () => {
+        const name = nameField.value.replaceAll(" ", "");
+        const value = valueField.value;
+        if (!fieldsNotEmpty(name, value)) {
+            alert("Please fill out the name and value of the variable!");
+            return;
+        }
+        addMapToEnv(name, value, env);
+    });
+}
+
+function addListenersForFunction() {
+    const addFunction = document.getElementById('addFunction');
+    const functionInfo = document.getElementById("function_info");
+    const button = document.querySelector("#function_info > button");
+    const name = document.getElementById("function_name");
+    const parameters = document.getElementById('parameters');
+    const expression = document.getElementById('input');
+
+    addVariables(addFunction, functionInfo); 
+    button.addEventListener('click', () => {
+        if (!fieldsNotEmpty(name.value, expression.value)) {
+            alert("Please fill out the name and the body of the function!");
+            return;
+        }
+        const nameString = name.value.replaceAll(' ', '');
+        addMapToEnv(nameString, `<span>(${parameters.value})</span><input value='${expression.value}'></input>`, 'phi');
+    });
+}   
+
+function fieldsNotEmpty(name, value) {
+    return name != "" && value != "";
+}
+
+function addVariables(addVariable, variableInfo) {
     addVariable.addEventListener('click', () => {
         if (variableInfo.style.display == "none" || variableInfo.style.display == "") {
             variableInfo.style.display = "flex";
@@ -15,29 +54,24 @@ Array.prototype.forEach.call(variables, variableDiv => {
             variableInfo.style.display = "none";
         }
     });
-    //add variable
-    button.addEventListener('click', () => {
-        const name = nameField.value.replaceAll(" ", "");
-        const value = valueField.value;
-        if (name == "" || value == "") {
-            alert("Please fill in the name and the value of the variable");
-            return;
-        }
-        if (!isValidName(name)) {
-            return;
-        }
-        const mapping = document.getElementById(env);
-        const map = makeMapDiv(name, parseInt(value), mapping, env);
-        mapping.appendChild(map);
-    });
-});
+}
+
+function addMapToEnv(name, value, env) {
+    if (!isValidName(name)) {
+        return;
+    }
+    const mapping = document.getElementById(env);
+    const map = makeMapDiv(name, value, mapping, env);
+    mapping.appendChild(map);
+}
+
 
 function makeMapDiv(name, value, parent, env) {
     const div = document.createElement('div');
     div.className = "map " + env;
     const varAndValue = document.createElement('span');
     varAndValue.className = "varAndvalue";
-    varAndValue.innerText = `${name} → ${value}`;
+    varAndValue.innerHTML = `${name} → ${value}`;
     const deleteDiv = document.createElement('span');
     deleteDiv.className = 'delete';
     deleteDiv.innerText = "x";
@@ -54,7 +88,6 @@ function isValidName(name) {
         alert(`You cannot start your variable name with a '$'.`);
         return false;
     }
-    let invalidWords = ['begin', 'if', 'set', 'while', 'val', '+', '-', "/", "=", "*", "||", "&&", "mod"];
     if (invalidWords.includes(name)) {
         alert(`You cannot name your variable '${name}', as it is an Impcore keyword.`);
         return false;
