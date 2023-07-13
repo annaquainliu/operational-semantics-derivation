@@ -191,7 +191,6 @@ input {
     justify-content: center;
     align-items: center;
     font-size: 2vw;
-    transition-duration: 0.5s;
     cursor: pointer;
 }
 
@@ -201,10 +200,6 @@ input {
     display: flex;
     justify-content: center;
     align-items: center;
-}
-
-.variable:hover {
-    width: 5.5%;
 }
 
 .variable_info {
@@ -219,6 +214,7 @@ input {
     flex-direction: column;
     align-items: center;
     padding-top: 2vh;
+    transition-duration: 0.5s;
 }
 
 .variable_info input {
@@ -302,4 +298,11 @@ input {
    align-items: center;
    cursor: pointer;
    margin-left: 1.5vw;
+   transition-duration: 0.3s;
+}
+
+.delete:hover {
+    background-color: white;
+    color: rgb(103, 100, 171);
+    border: 3px solid rgb(103, 100, 171);
 }
