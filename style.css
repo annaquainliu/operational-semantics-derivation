@@ -28,7 +28,7 @@ body h2 {
 }
 
 .environment, .expression {
-    height: 15vh;
+    height: 20vh;
     width: 100%;
     display : flex;
     flex-direction : row;
@@ -43,14 +43,21 @@ body h2 {
     font-weight: 200;
 }
 
-.environment > input, .expression > input {
+.environment > .mapping, .expression > input {
     width: 40%;
     height: 80%;
-    pointer-events: none;
     border-radius: 3vw;
     font-size: 3vw;
     border: 0;
     background-color: rgb(217, 217, 217);
+}
+
+.environment > .mapping {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+    overflow-x: auto;
 }
 
 .expression > input { 
@@ -185,6 +192,7 @@ input {
     align-items: center;
     font-size: 2vw;
     transition-duration: 0.5s;
+    cursor: pointer;
 }
 
 .variable span {
@@ -230,6 +238,7 @@ input {
     background-color: black;
     color: white;
     font-size: 1.3vw;
+    cursor: pointer;
 }
 
 #HTMLOutput {
@@ -249,4 +258,48 @@ input {
     overflow-x: scroll;
     margin-top: 10vh;
     margin-bottom: 10vh;
+}
+
+.mapping .map {
+    position: relative;
+    height: 75%;
+    border-radius: 3vw;
+    color: white;
+    padding-left: 2vw;
+    padding-right: 1vw;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    font-weight: 100;
+    white-space: nowrap;
+    margin-left: 0.5vw;
+    margin-right: 0.5vw;
+}
+
+.map-xi {
+    background-color: rgb(150, 64, 150);
+}
+
+.map-rho {
+    background-color: rgb(103, 100, 171);
+}
+
+.delete {
+   position: relative;
+   right: 0;
+   height: 40%;
+   width: 2.7vw;
+   font-size: 2vw;
+   padding-bottom: 0.5vw;
+   border-radius: 3vw;
+   color: white;
+   border: 3px solid white;
+   display: flex;
+   font-weight: 500;
+   justify-content: center;
+   align-items: center;
+   cursor: pointer;
+   margin-left: 1.5vw;
 }
