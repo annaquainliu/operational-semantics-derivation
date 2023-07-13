@@ -297,30 +297,14 @@ function IF(execute, html) {
 function SET(execute, html) {
     let derivation;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
-    const rhoTicks = Latex.ticks(beforeTicks, 'rho');
-    const xiTicks = Latex.ticks(beforeTicks, 'xi');
     const variable = derive(Queue.pop(), execute, html); 
     const exp = derive(Queue.pop(), execute, html);
     const env = findVarInfo(variable.name).env;
     const syntax = `Set(${variable.syntax}, ${exp.syntax})`;
     if (execute) {
-        let conditions, latexMap, title, afterEnv;
-        const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
-        if (env == "xi") {
-            const scope = `${variable.name} \\notin dom \\rho${rhoTicks} \\and ${variable.name} \\in dom \\xi${xiTicks}`;
-            conditions = scope + `\\and ${exp.derivation}`;
-            latexMap = {index : 0, map :  `\\{${variable.name} \\mapsto ${exp.value}\\}`};
-            title = 'GlobalAssign';
-            afterEnv = Rules.State.bothEnvInfo(ticks, null, {name: variable.name, value: exp.value});
-        } else {
-            const scope = `${variable.name} \\in dom \\rho${rhoTicks}`;
-            conditions = scope + `\\and ${exp.derivation}`;
-            latexMap = {index : 1, map : `\\{${variable.name} \\mapsto ${exp.value}\\}`};
-            title = 'FormalAssign';
-            afterEnv = Rules.State.bothEnvInfo(ticks, {name: variable.name, value: exp.value}, null);
-        }
-        derivation = html ? new Rules.Set(title, syntax, env, variable.name, exp.derivation, beforeEnv, afterEnv)
-                          : Latex.SetLatex(title, conditions, exp, variable, latexMap, beforeTicks, ticks);
+        let title = env == "xi" ? 'GlobalAssign' : 'FormalAssign';
+        derivation = html ? setHTML(env, title, syntax, variable, exp, beforeTicks)
+                          : setLatex(env, title, exp, variable, beforeTicks)
         let environment = {"rho" : rho, "xi" : xi};
         environment[env][variable.name] = exp.value;
         ticks[`${env}_ticks`]++;
@@ -331,7 +315,32 @@ function SET(execute, html) {
             "impcore" : ['set'].concat(variable.impcore).concat(exp.impcore)};
 }
 
+function setLatex(env, title, exp, variable, beforeTicks) {
+    const rhoTicks = Latex.ticks(beforeTicks, 'rho');
+    const xiTicks = Latex.ticks(beforeTicks, 'xi');
+    let latexMap, conditions;
+    if (env == "xi") {
+        const scope = `${variable.name} \\notin dom \\rho${rhoTicks} \\and ${variable.name} \\in dom \\xi${xiTicks}`;
+        conditions = scope + `\\and ${exp.derivation}`;
+        latexMap = {index : 0, map :  `\\{${variable.name} \\mapsto ${exp.value}\\}`};
+    } else {
+        const scope = `${variable.name} \\in dom \\rho${rhoTicks}`;
+        conditions = scope + `\\and ${exp.derivation}`;
+        latexMap = {index : 1, map : `\\{${variable.name} \\mapsto ${exp.value}\\}`};
+    }
+    return Latex.SetLatex(title, conditions, exp, variable, latexMap, beforeTicks, ticks);
+}
 
+function setHTML(env, title, syntax, variable, exp, beforeTicks) {
+    const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
+    let afterEnv;
+    if (env == "xi") {
+        afterEnv = Rules.State.bothEnvInfo(ticks, null, {name: variable.name, value: exp.value});
+    } else {
+        afterEnv = Rules.State.bothEnvInfo(ticks, {name: variable.name, value: exp.value}, null);
+    }
+    return new Rules.Set(title, syntax, env, variable.name, exp.derivation, beforeEnv, afterEnv);
+}
 
 function BEGIN(exp, execute, html) {
     const n_amnt = parseInt(exp.split("$begin")[1]);

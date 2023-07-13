@@ -34,7 +34,7 @@ Array.prototype.forEach.call(variables, variableDiv => {
 
 function makeMapDiv(name, value, parent, env) {
     const div = document.createElement('div');
-    div.className = "map map-" + env;
+    div.className = "map " + env;
     const varAndValue = document.createElement('span');
     varAndValue.className = "varAndvalue";
     varAndValue.innerText = `${name} → ${value}`;
