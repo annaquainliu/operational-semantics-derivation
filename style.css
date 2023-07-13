@@ -210,12 +210,11 @@ input {
     background-color:rgb(217, 217, 217);
     z-index: 2;
     border-radius: 2vw;
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     padding-top: 2vh;
     transition-duration: 0.2s;
-    opacity: 0;
 }
 
 .variable_info input {
@@ -305,5 +304,5 @@ input {
 .delete:hover {
     background-color: white;
     color: rgb(103, 100, 171);
-    border: 3px solid rgb(103, 100, 171);
+    border: 3px solid rgba(104, 100, 171, 0);
 }
