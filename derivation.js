@@ -11,6 +11,7 @@ HtmlOutput.style.fontSize = HtmlElement.fontSize;
 
 let xi = {};
 let rho = {};
+let phi = {};
 
 let startingFormat, endingFormat;
 let Queue = [];
