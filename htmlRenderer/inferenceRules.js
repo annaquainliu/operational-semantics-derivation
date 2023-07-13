@@ -7,6 +7,7 @@ class State extends HtmlElement {
     static envs = {'xi' : State.xi, 'rho' : State.rho, 'phi' : State.phi};
     static noMapping = null;
     static noEnvInfo = null;
+
     constructor(rhoInfo, xiInfo, param) {
         let xi_env = State.envNotation(State.xi, xiInfo);
         let rho_env = State.envNotation(State.rho, rhoInfo);
@@ -59,6 +60,9 @@ class Judgement extends HtmlElement {
 class Conditions extends HtmlElement {
 
     constructor(conditions, orientation) {
+        if (conditions.length == 0) {
+            conditions.push(HtmlElement.space());
+        }
         let style = {width : '100%', height : '50%', 'display' : 'flex', 'flex-direction' : orientation, 
                     'justify-content' : 'space-evenly', 'align-items' : 'center'};
         if (orientation == "row") {
