@@ -71,14 +71,13 @@ function addVariablesToEnv() {
             window.location.href = "#output";
             document.getElementById("output").style.display = 'block';
         }
-    } catch (error) {
-        console.log(error);
-        // console.log(message);
-        // if (message == "Nested derivation is too deep.") {
-        //     alert(`The derivation has over the max amount of layers (${numberDerivationsCap}).`);
-        // } else {
-        //     alert(`Improper Impcore expression!`);
-        // }
+    } catch ({name, message}) {
+        console.log(message);
+        if (message == "Nested derivation is too deep.") {
+            alert(`The derivation has over the max amount of layers (${numberDerivationsCap}).`);
+        } else {
+            alert(`Improper Impcore expression!`);
+        }
         return;
     }
 })});
