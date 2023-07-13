@@ -210,11 +210,12 @@ input {
     background-color:rgb(217, 217, 217);
     z-index: 2;
     border-radius: 2vw;
-    display: none;
+    display: flex;
     flex-direction: column;
     align-items: center;
     padding-top: 2vh;
-    transition-duration: 0.5s;
+    transition-duration: 0.2s;
+    opacity: 0;
 }
 
 .variable_info input {

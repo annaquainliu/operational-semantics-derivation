@@ -9,11 +9,12 @@ Array.prototype.forEach.call(variables, variableDiv => {
     const valueField = variableDiv.querySelector("input[name='value']");
 
     addVariable.addEventListener('click', () => {
-        if (variableInfo.style.display == "none" || variableInfo.style.display == "") {
-            variableInfo.style.display = "flex";
+        if (variableInfo.style.opacity == "0" || variableInfo.style.opacity == "") {
+            variableInfo.style.opacity = "1";
         } else {
-            variableInfo.style.display = "none";
+            variableInfo.style.opacity = "0";
         }
+        console.log( variableInfo.style);
     });
     //add variable
     button.addEventListener('click', () => {
