@@ -40,7 +40,7 @@ function addVariablesToEnv() {
             if (fields.length != 2) {
                 return;
             }
-            const name = fields[0];
+            const name = fields[0].toLowerCase();
             const value = fields[1];
             environments[env][name] = parseInt(value);
         });
