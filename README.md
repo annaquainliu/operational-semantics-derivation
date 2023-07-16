@@ -66,7 +66,7 @@ HTML Output:
 <img width="909" alt="image" src="https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/a0801ad1-b5ed-4173-ab5e-ce52bb5fa523">
 
 ## How to Read Opsem
-The condition for the derivations for `Begin` and Primitive `Apply` are read from top to bottom. The conditions for the rest of the rules are read from bottom to the top.
+The condition for the derivations for Primitive `Apply` is read from top to bottom. The conditions for the rest of the rules are read from bottom to the top.
 
 ## Limitations
 
