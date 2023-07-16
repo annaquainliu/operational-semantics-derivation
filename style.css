@@ -326,6 +326,7 @@ input {
     overflow-x: scroll;
     margin-top: 10vh;
     margin-bottom: 10vh;
+    padding-bottom: 10vh;
 }
 
 .mapping .map {
@@ -384,4 +385,8 @@ input {
     height: 100%;
     color: white;
     border-bottom: white;
+}
+
+.functionMap {
+    font-size: 2vw;
 }

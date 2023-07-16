@@ -1,4 +1,5 @@
 const invalidWords = ['begin', 'if', 'set', 'while', 'val', '+', '-', "/", "=", "*", "||", "&&", "mod"];
+const expression = document.getElementById('input');
 addListenersForGlobal();
 addListenersForFunction();
 
@@ -29,7 +30,6 @@ function addListenersForFunction() {
     const button = document.querySelector("#function_info > button");
     const name = document.getElementById("function_name");
     const parameters = document.getElementById('parameters');
-    const expression = document.getElementById('input');
 
     addVariables(addFunction, functionInfo); 
     button.addEventListener('click', () => {
@@ -37,8 +37,24 @@ function addListenersForFunction() {
             alert("Please fill out the name and the body of the function!");
             return;
         }
+        if (!isValidName(name.value)) {
+            return;
+        }
+        const params = parameters.value.replaceAll(" ", "").split(',');
+        for (let i = 0; i < params.length; i++) {
+            if (!isValidName(params[i])) {
+                return;
+            }
+            const repeat = params.filter(value => value == params[i]);
+            if (repeat.length > 1) {
+                alert("All parameters must have distinct names!");
+                return;
+            }
+        }
         const nameString = name.value.replaceAll(' ', '');
-        addMapToEnv(nameString, `<span>(${parameters.value})</span><input value='${expression.value}'></input>`, 'phi');
+        addMapToEnv(nameString, `<span>(${parameters.value})</span>
+                                <input value='${expression.value}' class='functionMap'></input>`, 
+                    'phi');
     });
 }   
 
@@ -48,6 +64,9 @@ function fieldsNotEmpty(name, value) {
 
 function addVariables(addVariable, variableInfo) {
     addVariable.addEventListener('click', () => {
+        if (addVariable.getAttribute('value') == 'phi') {
+            expression.value = '';
+        }
         if (variableInfo.style.display == "none" || variableInfo.style.display == "") {
             variableInfo.style.display = "flex";
         } else {
@@ -86,6 +105,10 @@ function makeMapDiv(name, value, parent, env) {
 function isValidName(name) {
     if (name.startsWith("$")) {
         alert(`You cannot start your variable name with a '$'.`);
+        return false;
+    }
+    if (name != "" && !isNaN(name)) {
+        alert("Your variable cannot be named a number!");
         return false;
     }
     if (invalidWords.includes(name)) {

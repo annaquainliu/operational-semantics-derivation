@@ -13,6 +13,7 @@ let xi = {};
 let rho = {};
 let phi = {};
 
+let html;
 let startingFormat, endingFormat;
 let Queue = [];
 const numberDerivationsCap = 50;
@@ -31,23 +32,39 @@ window.onload = () => {
 }
 
 function addVariablesToEnv() {
-    xi = {}; rho = {}; // clear environments
+    xi = {}; rho = {}; phi = {};// clear environments
     ticks = {rho_ticks : 0, xi_ticks : 0};
-    let environments = {"xi" : xi, "rho" : rho};
-    ["xi"].forEach(env => {
-        const variables = document.getElementById(env).getElementsByClassName('varAndvalue');
-        Array.prototype.forEach.call(variables, mapping => {
-            const fields = mapping.innerText.replaceAll(" ", "").split('→');
-            if (fields.length != 2) {
-                return;
-            }
-            const name = fields[0].toLowerCase();
-            const value = fields[1];
-            environments[env][name] = parseInt(value);
-        });
-    });
-    console.log(xi);
-    console.log(rho);
+    const xiLambda = mapping => {
+        const fields = mapping.innerText.replaceAll(" ", "").split('→');
+        if (fields.length != 2) {
+            return;
+        }
+        const name = fields[0].toLowerCase();
+        const value = fields[1];
+        xi[name] = parseInt(value);
+    };
+    const phiLambda = mapping => {
+        const fields = mapping.innerText.toLowerCase().replaceAll(" ", "").split('→');
+        const name = fields[0];
+        let params;
+        if (fields[1] == "()") {
+            params = [];
+        } else {
+            params = fields[1].substring(1, fields[1].length - 1).split(",");
+        }
+        console.log(params);
+        const expressionStr = mapping.getElementsByTagName('input')[0].value.toLowerCase();
+        const impcore = addValuesToQueue(expressionStr);
+        phi[name] = {'exp' : impcore, 'parameters' : params};
+    }
+    addSpecificEnv('phi', phiLambda);
+    addSpecificEnv('xi', xiLambda);
+    console.log(xi, phi);
+}
+
+function addSpecificEnv(env, lambda) {
+    const variables = document.getElementById(env).getElementsByClassName('varAndvalue');
+    Array.prototype.forEach.call(variables, lambda);
 }
 //derive
 [HtmlButton, latexButton].forEach(button => {button.addEventListener('click', () => {
@@ -58,12 +75,12 @@ function addVariablesToEnv() {
         return;
     }
     addVariablesToEnv(); //add variables
-    addValuesToQueue(value); //add values to queue
+    Queue = addValuesToQueue(value); //add values to queue
     HtmlOutput.style.scale = '1'; //reset html output scale to 1
-    const renderHTML = button.getAttribute('id') == 'deriveHTML';
+    html = button.getAttribute('id') == 'deriveHTML';
     try {
-        const derivation = derive(Queue.pop(), true, renderHTML);
-        if (renderHTML) {
+        const derivation = derive(Queue.pop(), true);
+        if (html) {
             HtmlOutput.innerHTML = derivation.derivation.html;
             window.location.href = "#HTMLOutput";
             document.getElementById('HTMLOuter').style.display = 'flex';
@@ -72,24 +89,24 @@ function addVariablesToEnv() {
             window.location.href = "#output";
             document.getElementById("output").style.display = 'block';
         }
-    } catch ({name, message}) {
-        console.log(message);
-        if (message == "Nested derivation is too deep.") {
-            alert(`The derivation has over the max amount of layers (${numberDerivationsCap}).`);
-        } else {
-            alert(`Improper Impcore expression!`);
-        }
+    } catch (error) {
+        console.log(error);
+        // if (message == "Nested derivation is too deep.") {
+        //     alert(`The derivation has over the max amount of layers (${numberDerivationsCap}).`);
+        // } else {
+        //     alert(`Improper Impcore expression!`);
+        // }
         return;
     }
 })});
 
 function addValuesToQueue(value) {
-    Queue = [];
+    let queue = [];
     let index = 0;
     let beginIndexes = [];
     queueHelper(value, "", null);
-    Queue.reverse();
-
+    queue.reverse();
+    return queue;
     function queueHelper(input, string, beginAmount) {
         while (index < input.length) {
             const char = input[index];
@@ -102,18 +119,18 @@ function addValuesToQueue(value) {
             } 
             else if (char == ")" || char == " ") {
                 if (string == "begin") {
-                    beginIndexes.push(Queue.length);
+                    beginIndexes.push(queue.length);
                     beginAmount = 0;
                 }
                 else if (beginAmount != null && string != "") {
                     beginAmount++;
                 }
                 if (string != "") {
-                    Queue.push(string);
+                    queue.push(string);
                     string = "";
                 }
                 if (beginAmount != null && char == ")") {
-                    Queue[beginIndexes.pop()] = `$begin${beginAmount.toString()}`;
+                    queue[beginIndexes.pop()] = `$begin${beginAmount.toString()}`;
                 }
                 index++;
                 if (char == ")") {
@@ -127,72 +144,75 @@ function addValuesToQueue(value) {
         }
         //no parenthesis
         if (string != "") {
-            Queue.push(string);
+            queue.push(string);
         }
     }
 }
 // ticks carry the ticks from before
-function derive(exp, execute, html) {
-
+function derive(exp, execute) {
+    console.log('exp is', exp);
     numberDerivations++;
     if (numberDerivations > numberDerivationsCap) {
         throw new Error("Nested derivation is too deep.");
     }
     if (!isNaN(exp)) {
-        return LIT(parseInt(exp), execute, html);
+        return LIT(parseInt(exp), execute);
     }
     if (exp.startsWith("$begin")) {
-        return BEGIN(exp, execute, html);
+        return BEGIN(exp, execute);
+    }
+    if (phi[exp] != null) { //if exp is a user-defined function
+        return APPLY(exp, execute);
     }
     switch (exp) {
         case "if":
-            return IF(execute, html);
+            return IF(execute);
         case "set":
-            return SET(execute, html);
+            return SET(execute);
         case "while":
-            return _WHILE(execute, html);
+            return _WHILE(execute);
         case "&&":
-            return PRIMITIVE(exp, execute, html, {name : "And",
+            return PRIMITIVE(exp, execute, {name : "And",
                                                    equation : (f, s) => f && s ? 1 : 0,
                                                    eqString : "$v_1 \\textsc{ \\&\\& } $v_2 = $v_r"});
         case "||":
-            return PRIMITIVE(exp, execute, html, {name : "Or",
+            return PRIMITIVE(exp, execute, {name : "Or",
                                                    equation : (f, s) => f || s ? 1 : 0,
                                                    eqString : "$v_1 \\textsc{ || } $v_2 = $v_r"});
         case "mod":
-            return PRIMITIVE(exp, execute, html, {name : 'Mod',
+            return PRIMITIVE(exp, execute, {name : 'Mod',
                                                    equation: (f, s) => f % s,
                                                    eqString : "-2^{31} \\leq $v_1 \\textsc{ mod } $v_2 < 2^{31}"})
         case "+":
-            return PRIMITIVE(exp, execute, html, {name : 'Add', 
+            return PRIMITIVE(exp, execute, {name : 'Add', 
                                                    equation : (f, s) => f + s, 
                                                    eqString : "-2^{31} \\leq $v_1 + $v_2 < 2^{31}"});
         case "-":
-            return PRIMITIVE(exp, execute, html, {name : 'Sub', 
+            return PRIMITIVE(exp, execute, {name : 'Sub', 
                                                    equation : (f, s) => f - s,
                                                    eqString : "-2^{31} \\leq $v_1 - $v_2 < 2^{31}"});
         case "/":
-            return PRIMITIVE(exp, execute, html, {name : 'Div', 
+            return PRIMITIVE(exp, execute, {name : 'Div', 
                                                    equation : (f, s) => Math.floor(f / s),
                                                    eqString : "-2^{31} \\leq $v_1 / $v_2 < 2^{31}"});
         case "*":
-            return PRIMITIVE(exp, execute, html, {name : 'Mult', 
+            return PRIMITIVE(exp, execute, {name : 'Mult', 
                                                    equation : (f, s) => f * s,
                                                    eqString : "-2^{31} \\leq $v_1 * $v_2 < 2^{31}"});
         case "=":
-            return PRIMITIVE(exp, execute, html, {name : 'Eq', 
+            return PRIMITIVE(exp, execute, {name : 'Eq', 
                                                    equation : (f, s) => f == s ? 1 : 0,
                                                    eqString : "$v_1 ?= $v_2"});
         case ">":
-            return PRIMITIVE(exp, execute, html, {name : 'Gt', 
+            return PRIMITIVE(exp, execute, {name : 'Gt', 
                                                    equation : (f, s) => f > s ? 1 : 0,
                                                    eqString : "$v_1 > $v_2 = $v_r"});
         case "<":
-            return PRIMITIVE(exp, execute, html, {name : 'Lt', 
+            return PRIMITIVE(exp, execute, {name : 'Lt', 
                                                     equation : (f, s) => f < s ? 1 : 0,
                                                     eqString : "$v_1 < $v_2 = $v_r"});
         default:
-           return VAR(exp, execute, html);
+           return VAR(exp, execute);
     }
 }
 
@@ -219,11 +239,11 @@ function findVarInfo(variable) {
 }
 // END OF UTILITIES
 
-function LIT(number, execute, html) {
+function LIT(number, execute) {
     let derivation;
     if (execute) {
         if (html) {
-            const unchangedEnvs = Rules.State.bothEnvInfo(ticks, null, null);
+            const unchangedEnvs = Rules.State.bothEnvTicksInfo(ticks);
             derivation = new Rules.Literal(number, unchangedEnvs, unchangedEnvs);
         } else {
             derivation = Latex.LiteralLatex(number, ticks);
@@ -235,13 +255,13 @@ function LIT(number, execute, html) {
             "impcore" : [number]};
 }
 
-function VAR(name, execute, html) {
+function VAR(name, execute) {
     let variable = findVarInfo(name);
     let derivation;
     const rhoTicks = Latex.ticks(ticks, 'rho');
     const xiTicks = Latex.ticks(ticks, 'xi');
     if (execute) {
-        const envInfo = Rules.State.bothEnvInfo(ticks, null, null);
+        const envInfo = Rules.State.bothEnvTicksInfo(ticks);
         if (variable.env == "rho") {
             derivation = html ? new Rules.Var('FormalVar', variable.env, name, variable.value, envInfo, envInfo) 
                               : Latex.VarLatex('FormalVar', name, `${name} \\in dom \\rho${rhoTicks}`, 
@@ -261,13 +281,14 @@ function VAR(name, execute, html) {
             "impcore" : [name]};
 }
 
-function IF(execute, html) {
+function IF(execute) {
     let derivation, title, branch;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
-    const condition = derive(Queue.pop(), execute, html);
-    const trueCase = derive(Queue.pop(), condition.value != 0 && execute, html);
-    const falseCase = derive(Queue.pop(), condition.value == 0 && execute, html);
+    const condition = derive(Queue.pop(), execute);
+    const trueCase = derive(Queue.pop(), condition.value != 0 && execute);
+    const falseCase = derive(Queue.pop(), condition.value == 0 && execute);
     const syntax = `If(${condition.syntax}, ${trueCase.syntax}, ${falseCase.syntax})`;
+    console.log(condition, trueCase, falseCase);
     if (condition.value == 0) {
         branch = falseCase;
         title = "IfFalse";
@@ -301,18 +322,18 @@ function ifLatex(title, condition, syntax, branch, beforeTicks) {
 }
 
 function ifHTML(title, syntax, condition, branch, beforeTicks) {
-    const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
-    const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
+    const beforeEnv = Rules.State.bothEnvTicksInfo(beforeTicks);
+    const afterEnv = Rules.State.bothEnvTicksInfo(ticks);
 
     return new Rules.If(title, syntax, branch.value, condition.derivation, 
                 condition.value, branch.derivation, beforeEnv, afterEnv);
 }
 
-function SET(execute, html) {
+function SET(execute) {
     let derivation;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
-    const variable = derive(Queue.pop(), execute, html); 
-    const exp = derive(Queue.pop(), execute, html);
+    const variable = derive(Queue.pop(), execute); 
+    const exp = derive(Queue.pop(), execute);
     const env = findVarInfo(variable.name).env;
     const syntax = `Set(${variable.syntax}, ${exp.syntax})`;
     if (execute) {
@@ -346,7 +367,7 @@ function setLatex(env, title, exp, variable, beforeTicks) {
 }
 
 function setHTML(env, title, syntax, variable, exp, beforeTicks) {
-    const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
+    const beforeEnv = Rules.State.bothEnvTicksInfo(beforeTicks);
     let afterEnv;
     if (env == "xi") {
         afterEnv = Rules.State.bothEnvInfo(ticks, null, {name: variable.name, value: exp.value});
@@ -356,7 +377,7 @@ function setHTML(env, title, syntax, variable, exp, beforeTicks) {
     return new Rules.Set(title, syntax, env, variable.name, exp.derivation, beforeEnv, afterEnv);
 }
 
-function BEGIN(exp, execute, html) {
+function BEGIN(exp, execute) {
     const n_amnt = parseInt(exp.split("$begin")[1]);
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
     let value = 0;
@@ -365,17 +386,17 @@ function BEGIN(exp, execute, html) {
     let exps_derivations = html ? [] : "";
     let impcore = [exp];
     for (let i = 0; i < n_amnt; i++) {
-        expression = derive(Queue.pop(), execute, html);
+        expression = derive(Queue.pop(), execute);
         exps_syntax += expression.syntax + ", ";
         html ? exps_derivations.push(expression.derivation) : 
-               exps_derivations += "  \\\\\\\\ " + expression.derivation;
+               exps_derivations = "  \\\\\\\\ " + expression.derivation + exps_derivations;
         impcore = impcore.concat(expression.impcore);
     }
     exps_syntax = exps_syntax.substring(0, exps_syntax.length - 2);
     const syntax = exps_syntax;
     if (execute) {
-        const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
-        const afterEnv =  Rules.State.bothEnvInfo(ticks, null, null);
+        const beforeEnv = Rules.State.bothEnvTicksInfo(beforeTicks);
+        const afterEnv =  Rules.State.bothEnvTicksInfo(ticks);
         if (n_amnt == 0) {
             derivation = html ? new Rules.Begin('EmptyBegin', syntax, 0, exps_derivations, beforeEnv, afterEnv)
                               : Latex.BeginLatex('EmptyBegin', " \\ ", syntax, 0, beforeTicks, ticks);
@@ -386,19 +407,19 @@ function BEGIN(exp, execute, html) {
                               : Latex.BeginLatex('Begin', exps_derivations, syntax, value, beforeTicks, ticks);
         }
     }
-    return {"syntax" : syntax, 
+    return {"syntax" : `Begin(${syntax})`, 
             "value" : value, 
             "derivation" : derivation, 
             "impcore" : impcore};
 }
 
-function PRIMITIVE(exp, execute, html, functionInfo) {
+function PRIMITIVE(exp, execute, functionInfo) {
     const symbol = exp == "&&" ? "\\&\\&" : exp;
     let derivation;
     let title = `Apply${functionInfo.name}`;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
-    const first = derive(Queue.pop(), execute, html);
-    const second = derive(Queue.pop(), execute, html);
+    const first = derive(Queue.pop(), execute);
+    const second = derive(Queue.pop(), execute);
     const result = functionInfo.equation(first.value, second.value);
     const syntax = `Apply(${html ? exp : symbol}, ${first.syntax}, ${second.syntax})`;
     let eqString = functionInfo.eqString.replace('$v_1', first.value)
@@ -415,13 +436,13 @@ function PRIMITIVE(exp, execute, html, functionInfo) {
                 title = 'ApplyEqTrue';
             }
         }
-        const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
-        const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
+        const beforeEnv = Rules.State.bothEnvTicksInfo(beforeTicks);
+        const afterEnv = Rules.State.bothEnvTicksInfo(ticks);
         derivation = html ? new Rules.Apply(title, syntax, result, 
                             Rules.Apply.makeCondInfo(exp, first.derivation, second.derivation),
                             beforeEnv, afterEnv)
                           : Latex.ApplyLatex(title, symbol, first, second,
-                                             eqString, syntax, result, beforeTicks, ticks);
+                                             eqString, result, beforeTicks, ticks);
     }
     return {"syntax" : syntax,
             "value" : result,
@@ -429,11 +450,11 @@ function PRIMITIVE(exp, execute, html, functionInfo) {
             'impcore' : [exp].concat(first.impcore).concat(second.impcore)};
 }
 
-function _WHILE(execute, html) {
+function _WHILE(execute) {
     let derivation;
     const beforeTicks = JSON.parse(JSON.stringify(ticks));
-    const cond = derive(Queue.pop(), execute, html);
-    const exp = derive(Queue.pop(), cond.value != 0 && execute, html);
+    const cond = derive(Queue.pop(), execute);
+    const exp = derive(Queue.pop(), cond.value != 0 && execute);
     const syntax = `While(${cond.syntax}, ${exp.syntax})`;
     const beforeQueue = Queue;
     if (execute) {
@@ -448,15 +469,15 @@ function _WHILE(execute, html) {
 }
 
 function whileHTML(cond, exp, syntax, beforeTicks) {
-    const beforeEnv = Rules.State.bothEnvInfo(beforeTicks, null, null);
+    const beforeEnv = Rules.State.bothEnvTicksInfo(beforeTicks);
     if (cond.value == 0) {
-        const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
+        const afterEnv = Rules.State.bothEnvTicksInfo(ticks);
         return new Rules.While(`WhileEnd`, syntax, "", cond.derivation, 
                                     exp.derivation, beforeEnv, afterEnv);
     } else {
         Queue = cond.impcore.concat(exp.impcore).reverse();
         const nextWhile = _WHILE(true, true).derivation;
-        const afterEnv = Rules.State.bothEnvInfo(ticks, null, null);
+        const afterEnv = Rules.State.bothEnvTicksInfo(ticks);
         return new Rules.While('WhileIterate', syntax, nextWhile, 
                                 cond.derivation, exp.derivation, beforeEnv, afterEnv);
     }
@@ -470,5 +491,59 @@ function whileLatex(cond, exp, beforeTicks) {
         Queue = cond.impcore.concat(exp.impcore).reverse();
         return Latex.WhileLatex(`WhileIterate`, _WHILE(true, false).derivation, 
                                 cond, exp, `${cond.value} \\neq 0`, beforeTicks, ticks);
+    }
+}
+
+function APPLY(funName, execute) {
+    let body, derivation;
+    const funInfo = phi[funName];
+    const params = funInfo.parameters;
+    let paramsInfo = [];
+    let params_syntax = "";
+    let impcore = [funName];
+    let value = 0;
+    let newRho = {};
+    const beforeTicks = JSON.parse(JSON.stringify(ticks));
+    params.forEach(param => {
+        const param_derivation = derive(Queue.pop(), execute);
+        param_derivation.name = param;
+        newRho[param] = param_derivation.value;
+        paramsInfo.push(param_derivation);
+        params_syntax += param_derivation.syntax + ", ";
+        impcore = impcore.concat(param_derivation.impcore);
+    });
+    const beforeRho = JSON.parse(JSON.stringify(rho));
+    rho = newRho; //setting the new rho
+    params_syntax = params_syntax.substring(0, params_syntax.length - 2);
+    if (params_syntax != "") {
+        params_syntax = ", " + params_syntax;
+    }
+    const syntax = `Apply(${funName}${params_syntax})`;
+    const beforeRhoTicks = ticks['rho_ticks']; // rho after params eval but before body eval
+    if (execute) {
+        ticks['rho_ticks'] = 0;
+        Queue = Queue.concat(funInfo.exp);
+        body = derive(Queue.pop(), true);
+        console.log(body);
+        value = body.value;
+        ticks['rho_ticks'] = beforeRhoTicks;
+        derivation = applyUserDerivation(funName, syntax, params, body, paramsInfo, beforeTicks);
+    }
+    rho = beforeRho; //resetting rho
+    return { 'syntax' : syntax,
+             'derivation' : derivation,
+             'value' : value,
+             'impcore' : impcore
+            };
+}
+
+function applyUserDerivation(funName, syntax, params, body, paramsInfos, beforeTicks) {
+    if (html) {
+        const beforeEnvInfos = Rules.State.bothEnvTicksInfo(beforeTicks);
+        const afterEnvInfos = Rules.State.bothEnvTicksInfo(ticks);
+        return new Rules.ApplyUser(funName, syntax, params, paramsInfos, body, 
+                                          beforeEnvInfos, afterEnvInfos);
+    } else {
+        return Latex.ApplyUserLatex(funName, syntax, params, body, paramsInfos, beforeTicks, ticks);
     }
 }
