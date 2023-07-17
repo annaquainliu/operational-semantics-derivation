@@ -392,10 +392,6 @@ input {
     font-size: 2vw;
 }
 
-#parameters {
-    pointer-events: none;
-}
-
 #parameter_info {
     width: 100%;
     height: 10vh;
