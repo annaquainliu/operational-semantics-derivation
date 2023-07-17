@@ -5,39 +5,94 @@ class State extends HtmlElement {
     static rho = 'ρ';
     static phi = 'Φ';
     static envs = {'xi' : State.xi, 'rho' : State.rho, 'phi' : State.phi};
+    static mapsTo = '→';
+    static langle = '〈';
+    static rangle = '〉';
     static noMapping = null;
     static noEnvInfo = null;
 
     constructor(rhoInfo, xiInfo, param) {
         let xi_env = State.envNotation(State.xi, xiInfo);
         let rho_env = State.envNotation(State.rho, rhoInfo);
-        super('div', {}, [], `〈${param},${xi_env},${State.phi},${rho_env}〉`);
+        super('div', {}, [], `${State.langle}${param},${xi_env},${State.phi},${rho_env}${State.rangle}`);
         this.param = param;
     }
 
     static unchangedState(param) {
         return new State(State.noEnvInfo, State.noEnvInfo, param);
     }
-    // info : {ticks : _, mapping : {name : value}}
+   
+    /**
+     * Takes in the specified environment (xi or rho), the envInfo of the specific 
+     * environment, and returns the notation of the environment in Opsem
+     * 
+     * @param {String} env : The specified environment
+     * @param {JSON} info : {ticks : number, mapping : {name : string, value : number}}
+     * @returns {String} : The notation of the environment in Opsem
+     */
     static envNotation(env, info) {
         if (info == null) {
             return env;
         }
         let notation = env + "'".repeat(info.ticks);
         if (info.mapping != null) {
-            notation += `{${info.mapping.name} → ${info.mapping.value}}`;
+            notation += `{${info.mapping.name} ${State.mapsTo} ${info.mapping.value}}`;
         }
         return notation;
     }
 
+    /**
+     * Takes in the number of ticks in ONE environment and the
+     * JSON of the current environment mapping and returns
+     * a JSON recording the ticks and mapping of the environment 
+     * at a certain state.
+     * 
+     * @param {Number} ticks 
+     * @param {JSON} mapping : {name : string, value : number} 
+     * @returns {JSON} : {ticks : number, mapping : mapping}
+     */
     static envInfo(ticks, mapping) {
         return {ticks : ticks, mapping : mapping};
     }
-    //  map : {name : name, value : value}
+    
+    /**
+     * Takes in a JSON of the number of ticks in each environment and 
+     * the JSON of the mapping of the rho and xi environment and
+     * returns a JSON recording the ticks and mapping of the 
+     * rho AND xi environment
+     * 
+     * 
+     * @param {JSON} ticks : {rho_ticks : number, xi_ticks : number}
+     * @param {JSON} rho_map : {name : string, value : number}
+     * @param {JSON} xi_map : {name : string, value : number}
+     * @returns {JSON} of the ticks in each environment and the mapping in each 
+     *                 environment
+     */
     static bothEnvInfo(ticks, rho_map, xi_map) {
         return {ticks : ticks, mapping : {xi : xi_map, rho : rho_map}};
     }
 
+    /**
+     * Takes in only a JSON recording the amount of ticks in the xi and
+     * rho environment and returns a JSON recording the ticks of both environments 
+     * (with no mappings)
+     * 
+     * @param {JSON} ticks : {rho_ticks : number, xi_ticks : number}
+     * @returns {JSON} : {ticks : ticks, mapping : {xi : null, rho : null}}
+     */
+    static bothEnvTicksInfo(ticks) {
+        return State.bothEnvInfo(ticks, null, null);
+    }
+
+    /**
+     * Takes in the envInfos (in the format (rom the function `bothEnvInfos`) 
+     * and the specified environment and returns the visual ticks 
+     * on that environment.
+     * 
+     * @param {JSON} envInfos : {ticks : {rho_ticks : number, xi_ticks : number}, mapping : JSON}
+     * @param {String} env : The specified environment (xi or rho)
+     * @returns {String} : The current amount of ticks in the specified env 
+     */
     static getTicksFromEnvs(envInfos, env) {
         const times = envInfos.ticks[`${env}_ticks`];
         return "'".repeat(times);
@@ -90,7 +145,7 @@ class Conditions extends HtmlElement {
 
 class InferenceRule extends HtmlElement {
 
-    constructor(name, conditions, syntax, result, beforeEnv, afterEnv) {
+    constructor(title, conditions, syntax, result, beforeEnv, afterEnv) {
         const initialState = InferenceRule.makeState(syntax, beforeEnv);
         const finalState = InferenceRule.makeState(result, afterEnv);
         const judgement = new Judgement(initialState, finalState);
@@ -101,9 +156,9 @@ class InferenceRule extends HtmlElement {
         const ruleElement = new HtmlElement('div', ruleStyle, [conditions, judgement], '');
         const nameElement = new HtmlElement('div', {width : 'fit-content', 'white-space' : 'no-wrap', 
                                                     'align-self' : 'flex-end', 'padding-bottom' : HtmlElement.fontSize, 
-                                                    'padding-left' : '0.5vw'}, [], name);
+                                                    'padding-left' : '0.5vw'}, [], title);
         super('div', ruleAndNameStyle, [ruleElement, nameElement], '');
-        this.name = name;
+        this.name = title;
         this.judgement = judgement;
         this.conditions = conditions;
         this.initialState = initialState;
@@ -111,9 +166,18 @@ class InferenceRule extends HtmlElement {
         this.result = finalState.param;
     }
 
-    // envInfo : {ticks : ticks, mapping : mapping};
-    // ticks : {rho_ticks : _, xi_ticks : _}
-    // mapping : {xi : JSON, rho : JSON}
+    /**
+     * 
+     * @param {String} syntax : The AST of the expression/value
+     * @param {JSON} envInfo : {ticks : 
+     *                              {rho_ticks : number, 
+     *                               xi_ticks: number}, 
+     *                          mapping : 
+     *                               {rho : {name : string, value : number},
+     *                               {xi : {name : string, value : number}}}
+     *                         } 
+     * @returns {State} 
+     */
     static makeState(syntax, envInfo) {
         return new State(State.envInfo(envInfo.ticks.rho_ticks, envInfo.mapping.rho),
                          State.envInfo(envInfo.ticks.xi_ticks, envInfo.mapping.xi), 
@@ -141,7 +205,6 @@ class If extends InferenceRule {
 class Literal extends InferenceRule {
 
     constructor(value, beforeEnv, afterEnv) {
-        // new Conditions([HtmlElement.space()], 'row'), initialState, finalState
         super("Literal", new Conditions([HtmlElement.space()], 'row'), `Literal(${value})`, 
               value, beforeEnv, afterEnv);
     }
@@ -181,6 +244,7 @@ class Var extends InferenceRule {
 class Begin extends InferenceRule {
 
     constructor(title, syntax, result, exp_derivations, beforeEnv, afterEnv) {
+        exp_derivations.reverse();
         const conditions = new Conditions(exp_derivations, 'column');
         super(title, conditions, `Begin(${syntax})`, result, beforeEnv, afterEnv);
     }
@@ -235,6 +299,50 @@ class Apply extends InferenceRule {
     }
 }
 
+class ApplyUser extends InferenceRule {
+
+    constructor(funName, syntax, paramNames, paramsInfos, body, beforeEnv, afterEnv) {
+        const paramsString = paramNames.toString();
+        let allDistinctCond;
+        if (paramsString == "") {
+            allDistinctCond = HtmlElement.empty();
+        } else {
+            allDistinctCond = HtmlElement.conditionText(`${paramsString} all distinct`, 'column');
+        }
+        const rhoAndParams = ApplyUser.makeRhoAndParams(paramsInfos);
+        const conditionList = [body.derivation, 
+                              HtmlElement.conditionText(`${State.rho} = ${rhoAndParams.rhoMapping}`, 'column')]
+                              .concat(rhoAndParams.paramsDerivations)
+                              .concat([
+                                allDistinctCond,
+                                HtmlElement.conditionText(`${State.rho}(${funName}) = User(${State.langle}${paramsString}${State.rangle}, ${body.syntax})`, 'column')
+                              ]);
+        const conditions = new Conditions(conditionList, 'column');
+        super('ApplyUser', conditions, syntax, body.value, beforeEnv, afterEnv);
+    }
+
+    /**
+     * Makes the new rho scoped in the function and returns an array of HtmlElements of 
+     * the parameters derivations
+     * @param {Array of JSON} paramsInfo 
+     * @returns {JSON} : {rhoMapping : string, paramsDerivations : Array of HtmlElement}
+     */
+    static makeRhoAndParams(paramsInfo) {
+        if (paramsInfo.length == 0) {
+            return {'rhoMapping' : '{}', 'paramsDerivations' : []};
+        }
+        let paramsDerivations = [];
+        let mapping = "{";
+        for (let i = 0; i < paramsInfo.length; i++) {
+            paramsDerivations.push(paramsInfo[i].derivation);
+            mapping += `${paramsInfo[i].name} ${State.mapsTo} ${paramsInfo[i].value}, `;
+        }
+        paramsDerivations.reverse();
+        mapping = mapping.substring(0, mapping.length - 2) + "}";
+        return {'rhoMapping' : mapping, 'paramsDerivations' : paramsDerivations};
+    }
+}
+
 export default {InferenceRule: InferenceRule, 
                 Conditions: Conditions, 
                 Judgement: Judgement, 
@@ -245,4 +353,5 @@ export default {InferenceRule: InferenceRule,
                 Var : Var,
                 Begin : Begin,
                 While : While,
-                Apply : Apply};
+                Apply : Apply,
+                ApplyUser : ApplyUser};
