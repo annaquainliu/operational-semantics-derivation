@@ -14,10 +14,13 @@ function addListenersForGlobal() {
 
     addVariables(addVariable, variableInfo);
     button.addEventListener('click', () => {
-        const name = nameField.value.replaceAll(" ", "");
+        const name = nameField.value.toLowerCase().replaceAll(" ", "");
         const value = valueField.value;
-        if (!fieldsNotEmpty(name, value)) {
-            alert("Please fill out the name and value of the variable!");
+        if (!isNaN(name)) {
+            alert("You cannot name your variable a number!");
+            return;
+        }
+        if (!isValidName(name) || !isValidName(value)) {
             return;
         }
         addMapToEnv(name, value, env);
@@ -30,37 +33,51 @@ function addListenersForFunction() {
     const button = document.querySelector("#function_info > button");
     const name = document.getElementById("function_name");
     const parameters = document.getElementById('parameters');
+    const showParam = document.querySelector("#parameterDiv > button");
+    const paramInfo = document.getElementById('parameter_info');
+    const addParam = document.querySelector("#parameter_info > button");
 
     addVariables(addFunction, functionInfo); 
+    addVariables(showParam, paramInfo);
     button.addEventListener('click', () => {
-        if (!fieldsNotEmpty(name.value, expression.value)) {
-            alert("Please fill out the name and the body of the function!");
+        const paramsValue = parameters.value.toLowerCase();
+        const expValue = expression.value.toLowerCase();
+        if (!isNaN(name.value)) {
+            alert("You cannot name your variable a number!");
             return;
         }
-        if (!isValidName(name.value)) {
+        if (!isValidName(name.value) || !isValidName(expression.value)) {
+            return;
+        }
+        const nameString = name.value.replaceAll(' ', '');
+        addMapToEnv(nameString, `<span>(${paramsValue})</span>
+                                <input value='${expValue}' class='functionMap'></input>`, 
+                    'phi');
+    });
+    addParam.addEventListener('click', () => {
+        const paramInput = document.querySelector("#parameter_info input"); 
+        const paramToAdd = paramInput.value.toLowerCase();
+        if (!isNaN(paramToAdd)) {
+            alert("You cannot name your parameter a number!");
+            return;
+        }
+        if (!isValidName(paramToAdd)) {
             return;
         }
         const params = parameters.value.replaceAll(" ", "").split(',');
         for (let i = 0; i < params.length; i++) {
-            if (!isValidName(params[i])) {
-                return;
-            }
-            const repeat = params.filter(value => value == params[i]);
-            if (repeat.length > 1) {
-                alert("All parameters must have distinct names!");
+            if (params[i] == paramToAdd) {
+                alert('All parameter names must be distinct');
                 return;
             }
         }
-        const nameString = name.value.replaceAll(' ', '');
-        addMapToEnv(nameString, `<span>(${parameters.value})</span>
-                                <input value='${expression.value}' class='functionMap'></input>`, 
-                    'phi');
+        if (parameters.value == "") {
+            parameters.value = paramToAdd;
+        } else {
+            parameters.value += `, ${paramToAdd}`;
+        }
     });
 }   
-
-function fieldsNotEmpty(name, value) {
-    return name != "" && value != "";
-}
 
 function addVariables(addVariable, variableInfo) {
     addVariable.addEventListener('click', () => {
@@ -103,12 +120,12 @@ function makeMapDiv(name, value, parent, env) {
 
 
 function isValidName(name) {
-    if (name.startsWith("$")) {
-        alert(`You cannot start your variable name with a '$'.`);
+    if (name == "") {
+        alert("Your name for your variable/function cannot be empty!");
         return false;
     }
-    if (name != "" && !isNaN(name)) {
-        alert("Your variable cannot be named a number!");
+    if (name.startsWith("$")) {
+        alert(`You cannot start your variable name/expression with a '$'.`);
         return false;
     }
     if (invalidWords.includes(name)) {
