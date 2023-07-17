@@ -16,7 +16,7 @@ let phi = {};
 let html;
 let startingFormat, endingFormat;
 let Queue = [];
-const numberDerivationsCap = 50;
+const numberDerivationsCap = 100;
 let numberDerivations = 0;
 let ticks = {rho_ticks : 0, xi_ticks : 0};
 
@@ -51,6 +51,7 @@ function addVariablesToEnv() {
             params = [];
         } else {
             params = fields[1].substring(1, fields[1].length - 1).split(",");
+            params = params.filter((v, i, a) => v != "" && v != null);
         }
         console.log(params);
         const expressionStr = mapping.getElementsByTagName('input')[0].value.toLowerCase();
