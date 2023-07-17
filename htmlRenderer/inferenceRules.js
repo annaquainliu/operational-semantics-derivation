@@ -158,7 +158,7 @@ class InferenceRule extends HtmlElement {
         const nameElement = new HtmlElement('div', {width : 'fit-content', 'white-space' : 'no-wrap', 
                                                     'align-self' : 'flex-end', 'padding-bottom' : HtmlElement.fontSize, 
                                                     'padding-left' : '0.5vw'}, [], title, {});
-        super('div', ruleAndNameStyle, [ruleElement, nameElement], '', {'onmouseenter' : `this.style.color = 'blue'`,
+        super('div', ruleAndNameStyle, [ruleElement, nameElement], '', {'onmouseenter' : `this.style.color = 'red'`,
                                                                         'onmouseout' : `this.style.color = 'black'`});
         this.name = title;
         this.judgement = judgement;
