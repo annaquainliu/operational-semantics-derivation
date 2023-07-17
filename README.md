@@ -10,8 +10,6 @@ Impcore is a functional programming language which consists of two types of stat
 
 **All definitions must be assigned one expression, and expressions can consist of nested expressions**.
 
-For the scope of this project, this program allows users to create Impcore expressions and define variables, but does not allow users to define functions *(yet!)*.
-
 Due to the recursive nature of Impcore's syntax, operational semantic derivations can create a recursive 'math expression' that explains the behavior of an Impcore expression. This program takes in an Impcore expression, and outputs the derivation in Latex syntax.
 
 ### Impcore Environments
