@@ -14,7 +14,7 @@ class State extends HtmlElement {
     constructor(rhoInfo, xiInfo, param) {
         let xi_env = State.envNotation(State.xi, xiInfo);
         let rho_env = State.envNotation(State.rho, rhoInfo);
-        super('div', {}, [], `${State.langle}${param},${xi_env},${State.phi},${rho_env}${State.rangle}`);
+        super('div', {}, [], `${State.langle}${param},${xi_env},${State.phi},${rho_env}${State.rangle}`, {});
         this.param = param;
     }
 
@@ -105,7 +105,7 @@ class Judgement extends HtmlElement {
     constructor (initialState, finalState) {
         let style = {width : '100%', display : 'flex', 'flex-direction' : 'row', 'justify-content' : 'center', 'border-top' : 'solid black 1px'};
         const downarrowDiv = HtmlElement.text(Judgement.downarrow);
-        super('div', style, [initialState, downarrowDiv, finalState], '');
+        super('div', style, [initialState, downarrowDiv, finalState], '', {});
         this.initialState = initialState;
         this.finalState = finalState;
     }
@@ -123,7 +123,7 @@ class Conditions extends HtmlElement {
         if (orientation == "row") {
             style['align-items'] = 'flex-end';
         }
-        super('div', style, conditions, '');
+        super('div', style, conditions, '', {});
         this.conditions = conditions;
     }
 
@@ -152,12 +152,14 @@ class InferenceRule extends HtmlElement {
         const ruleStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 
                            'flex-direction' : 'column', 'white-space': 'nowrap'};
         const ruleAndNameStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 
-                                'flex-direction' : 'row', 'vertical-align' : 'bottom', 'white-space': 'nowrap'};
-        const ruleElement = new HtmlElement('div', ruleStyle, [conditions, judgement], '');
+                                'flex-direction' : 'row', 'vertical-align' : 'bottom', 'white-space': 'nowrap',
+                                'color' : 'black'};
+        const ruleElement = new HtmlElement('div', ruleStyle, [conditions, judgement], '', {});
         const nameElement = new HtmlElement('div', {width : 'fit-content', 'white-space' : 'no-wrap', 
                                                     'align-self' : 'flex-end', 'padding-bottom' : HtmlElement.fontSize, 
-                                                    'padding-left' : '0.5vw'}, [], title);
-        super('div', ruleAndNameStyle, [ruleElement, nameElement], '');
+                                                    'padding-left' : '0.5vw'}, [], title, {});
+        super('div', ruleAndNameStyle, [ruleElement, nameElement], '', {'onmouseenter' : `this.style.color = 'blue'`,
+                                                                        'onmouseout' : `this.style.color = 'black'`});
         this.name = title;
         this.judgement = judgement;
         this.conditions = conditions;

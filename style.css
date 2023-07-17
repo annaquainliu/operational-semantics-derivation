@@ -318,6 +318,7 @@ input {
     font-weight: 100;
     border-radius: 3vw;
     margin: auto;
+    cursor: pointer;
 }
 
 #HTMLOuter {
