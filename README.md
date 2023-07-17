@@ -71,9 +71,3 @@ The condition for the derivations for Primitive `Apply` is read from top to bott
 ## Limitations
 
  This program does not allow the user to declare any functions (yet!).
-
-
- ### TODO:
- - Fix empty begin spacing
- - Add feature to edit environments
- - Add user defined functions
