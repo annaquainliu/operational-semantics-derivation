@@ -275,8 +275,7 @@ class Apply extends InferenceRule {
         const functionCondition = HtmlElement.conditionText(`${State.phi}(${condInfo.name}) = Primitive(${condInfo.name})`, 'column');
         let eqText = Apply.makeEqString(condInfo.name, condInfo.exp_1.result, condInfo.exp_2.result, result);
         const eqString = HtmlElement.conditionText(eqText, 'column');
-        const conditions = new Conditions([functionCondition, condInfo.exp_1, 
-                                            condInfo.exp_2, eqString], 'column');
+        const conditions = new Conditions([eqString, condInfo.exp_2, condInfo.exp_1, functionCondition], 'column');
         super(title, conditions, syntax, result, beforeEnv, afterEnv);
     }   
 

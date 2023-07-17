@@ -46,7 +46,7 @@ function WhileLatex(title, next_while, condition, exp, eqCondition, ticks_1, tic
 }
 
 function ApplyLatex(title, functionName, exp_1, exp_2, eqString, result, ticks_1, ticks_2) {
-    return baseInferenceRule(title, `\\phi(${functionName}) = \\textsc{Primitive}(${functionName}) \\\\\\\\ ${exp_1.derivation} \\\\\\\\ ${exp_2.derivation} \\\\\\\\ ${eqString}`,
+    return baseInferenceRule(title, `${eqString} \\\\\\\\ ${exp_2.derivation} \\\\\\\\ ${exp_1.derivation} \\\\\\\\ \\phi(${functionName}) = \\textsc{Primitive}(${functionName})`,
                             `Apply(${functionName}, ${exp_1.syntax}, ${exp_2.syntax})`,
                             result,
                             ticks_1,
