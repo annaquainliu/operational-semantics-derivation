@@ -16,7 +16,7 @@
     <div class="environment">
         <label>ξ</label>
         <div class="mapping" id="xi"></div>
-        <div class="variable" id='addGlobal' value="xi" style="background-color: rgb(150, 64, 150);">
+        <div class="variable" id='addGlobal' value="xi">
             <span class="add_variable">+</span>
             <div class="variable_info">
                 <input placeholder="Name" name="name" type="text">
@@ -28,11 +28,9 @@
     <div class="environment">
         <label>Φ</label>
         <div class='mapping' id="phi"></div>
-        <div class="function variable" id="addFunction" value="phi" style="background-color: rgb(103, 100, 171);">
+        <div class="function variable" id="addFunction" value="phi">
             <span class="add_variable">+</span>
         </div>
-    </div>
-    <div class="expression">
         <div id="function_info" class="phi">
             <input placeholder="Function name" id="function_name">
             <div id="parameterDiv">
@@ -43,9 +41,12 @@
                 </div>
                 <button>+</button>
             </div>
+            <input placeholder="Function Body" id="functionBody">
             <button>ADD</button>
         </div>
-        <input id="input" placeholder="Type in an Impcore expression!" style="text-align: center">
+    </div>
+    <div class="expression">
+        <input id="input" placeholder="Type in an Impcore expression!">
     </div>
     <div id="deriveButtons">
         <button id="deriveLatex">Derive<br /><span>To Latex</span></button>
