@@ -17,9 +17,9 @@ let phi = {};
 let html; //global var that is true if user wants html render, false otherwise
 let startingFormat, endingFormat; //the formatting for latex
 let Queue = [];
+let Stack = []; // stack containing the formals (for recursion)
 const numberDerivationsCap = 100; // max amount of recursive derivations
-let numberDerivations = 0; //the amount of derivatiosn 
-let ticks = {rho_ticks : 0, xi_ticks : 0};
+let numberDerivations = 0; //the amount of derivations
 /* End Globals */
 
 window.onload = () => {
@@ -76,6 +76,7 @@ function addSpecificEnv(env, lambda) {
         return;
     }
     addVariablesToEnv(); //add variables
+    Stack = [rho];
     Queue = addValuesToQueue(value); //add values to queue
     HtmlOutput.style.scale = '1'; //reset html output scale to 1
     html = button.getAttribute('id') == 'deriveHTML';
@@ -265,7 +266,10 @@ function findVarInfo(variable) {
     }
     throw new Error(`${variable} cannot be found in either xi or rho.`);
 }
-// END OF UTILITIES
+
+/////////////////////////
+/* END OF UTILITIES */
+/////////////////////////
 
 function LIT(number, execute) {
     let derivation;

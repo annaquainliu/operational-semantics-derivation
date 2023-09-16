@@ -1,3 +1,6 @@
+import {Syntax, translateEnvIntoWords} from "../utilities/environment.js"
+
+const syntax = new Syntax("\\{", "\\}", "\\xi", "\\rho", "\\phi", "\\mapsto", "_{", "}", "\\langle", "\\rangle");
 function ticks(ticks, env) {
     return `'`.repeat(ticks[env + '_ticks']);
 }
@@ -53,6 +56,10 @@ function ApplyLatex(title, functionName, exp_1, exp_2, eqString, result, ticks_1
                             ticks_2);
 }
 
+function envNotation(env, obj) {
+    return translateEnvIntoWords(env, obj, syntax);
+}
+
 /**
  * @param {String} funcName 
  * @param {String} syntax 
@@ -88,4 +95,5 @@ export default {LiteralLatex,
                 WhileLatex, 
                 ApplyLatex, 
                 ApplyUserLatex,
-                ticks};
+                ticks,
+                envNotation};

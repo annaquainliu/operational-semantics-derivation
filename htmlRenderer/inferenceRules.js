@@ -1,4 +1,5 @@
 import HtmlElement from './htmlElement.js';
+import {Syntax, translateEnvIntoWords} from "../utilities/environment.js"
 
 class State extends HtmlElement {
     static xi = 'ξ';
@@ -10,92 +11,28 @@ class State extends HtmlElement {
     static rangle = '〉';
     static noMapping = null;
     static noEnvInfo = null;
+    static syntax = new Syntax("{", "}", State.xi, State.rho, State.phi, State.mapsTo, "<sub>", "</sub>", State.langle, State.rangle);
 
     constructor(rhoInfo, xiInfo, param) {
-        let xi_env = State.envNotation(State.xi, xiInfo);
-        let rho_env = State.envNotation(State.rho, rhoInfo);
-        super('div', {}, [], `${State.langle}${param},${xi_env},${State.phi},${rho_env}${State.rangle}`, {});
+        
+        super('div', {}, [], `${State.langle}${param},${envNotation("xi", xiInfo)},${State.phi},${rho_env}${State.rangle}`, {});
         this.param = param;
     }
 
     static unchangedState(param) {
         return new State(State.noEnvInfo, State.noEnvInfo, param);
     }
-   
+
     /**
-     * Takes in the specified environment (xi or rho), the envInfo of the specific 
-     * environment, and returns the notation of the environment in Opsem
+     * Takes in the specified environment (xi, rho, or phi), the mapping, 
+     * and returns the notation of the environment in Opsem
      * 
      * @param {String} env : The specified environment
-     * @param {JSON} info : {ticks : number, mapping : {name : string, value : number}}
+     * @param {JSON} obj : 
      * @returns {String} : The notation of the environment in Opsem
      */
-    static envNotation(env, info) {
-        if (info == null) {
-            return env;
-        }
-        let notation = env + "'".repeat(info.ticks);
-        if (info.mapping != null) {
-            notation += `{${info.mapping.name} ${State.mapsTo} ${info.mapping.value}}`;
-        }
-        return notation;
-    }
-
-    /**
-     * Takes in the number of ticks in ONE environment and the
-     * JSON of the current environment mapping and returns
-     * a JSON recording the ticks and mapping of the environment 
-     * at a certain state.
-     * 
-     * @param {Number} ticks 
-     * @param {JSON} mapping : {name : string, value : number} 
-     * @returns {JSON} : {ticks : number, mapping : mapping}
-     */
-    static envInfo(ticks, mapping) {
-        return {ticks : ticks, mapping : mapping};
-    }
-    
-    /**
-     * Takes in a JSON of the number of ticks in each environment and 
-     * the JSON of the mapping of the rho and xi environment and
-     * returns a JSON recording the ticks and mapping of the 
-     * rho AND xi environment
-     * 
-     * 
-     * @param {JSON} ticks : {rho_ticks : number, xi_ticks : number}
-     * @param {JSON} rho_map : {name : string, value : number}
-     * @param {JSON} xi_map : {name : string, value : number}
-     * @returns {JSON} of the ticks in each environment and the mapping in each 
-     *                 environment
-     */
-    static bothEnvInfo(ticks, rho_map, xi_map) {
-        return {ticks : ticks, mapping : {xi : xi_map, rho : rho_map}};
-    }
-
-    /**
-     * Takes in only a JSON recording the amount of ticks in the xi and
-     * rho environment and returns a JSON recording the ticks of both environments 
-     * (with no mappings)
-     * 
-     * @param {JSON} ticks : {rho_ticks : number, xi_ticks : number}
-     * @returns {JSON} : {ticks : ticks, mapping : {xi : null, rho : null}}
-     */
-    static bothEnvTicksInfo(ticks) {
-        return State.bothEnvInfo(ticks, null, null);
-    }
-
-    /**
-     * Takes in the envInfos (in the format (rom the function `bothEnvInfos`) 
-     * and the specified environment and returns the visual ticks 
-     * on that environment.
-     * 
-     * @param {JSON} envInfos : {ticks : {rho_ticks : number, xi_ticks : number}, mapping : JSON}
-     * @param {String} env : The specified environment (xi or rho)
-     * @returns {String} : The current amount of ticks in the specified env 
-     */
-    static getTicksFromEnvs(envInfos, env) {
-        const times = envInfos.ticks[`${env}_ticks`];
-        return "'".repeat(times);
+    static envNotation(env, obj) {
+        return translateEnvIntoWords(env, obj, State.syntax);
     }
 }
 
