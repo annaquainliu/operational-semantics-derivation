@@ -9,16 +9,18 @@ import Rules from './htmlRenderer/inferenceRules.js';
 
 HtmlOutput.style.fontSize = HtmlElement.fontSize;
 
+/* Initialize Globals */
 let xi = {};
 let rho = {};
 let phi = {};
 
-let html;
-let startingFormat, endingFormat;
+let html; //global var that is true if user wants html render, false otherwise
+let startingFormat, endingFormat; //the formatting for latex
 let Queue = [];
-const numberDerivationsCap = 100;
-let numberDerivations = 0;
+const numberDerivationsCap = 100; // max amount of recursive derivations
+let numberDerivations = 0; //the amount of derivatiosn 
 let ticks = {rho_ticks : 0, xi_ticks : 0};
+/* End Globals */
 
 window.onload = () => {
     document.getElementById("output").style.display = 'none';
@@ -32,6 +34,7 @@ window.onload = () => {
 }
 
 function addVariablesToEnv() {
+    numberDerivations = 0;
     xi = {}; rho = {}; phi = {};// clear environments
     ticks = {rho_ticks : 0, xi_ticks : 0};
     const xiLambda = mapping => {
@@ -53,14 +56,12 @@ function addVariablesToEnv() {
             params = fields[1].substring(1, fields[1].length - 1).split(",");
             params = params.filter((v, i, a) => v != "" && v != null);
         }
-        console.log(params);
         const expressionStr = mapping.getElementsByTagName('input')[0].value.toLowerCase();
         const impcore = addValuesToQueue(expressionStr);
         phi[name] = {'exp' : impcore, 'parameters' : params};
     }
     addSpecificEnv('phi', phiLambda);
     addSpecificEnv('xi', xiLambda);
-    console.log(xi, phi);
 }
 
 function addSpecificEnv(env, lambda) {
@@ -69,7 +70,6 @@ function addSpecificEnv(env, lambda) {
 }
 //derive
 [HtmlButton, latexButton].forEach(button => {button.addEventListener('click', () => {
-    numberDerivations = 0;
     let value = input.value.toLowerCase();
     if (value == "" || value == null) {
         alert("Ill-formed Impcore expression");
@@ -100,6 +100,28 @@ function addSpecificEnv(env, lambda) {
     }
 })});
 
+/**
+ * 
+ * Takes in the expression to derive and returns a queue where
+ * each item pushed on the queue is a non empty string seperated
+ * by a " " or "(" or ")". It uses a recursive helper function,
+ * queueHelper().
+ * 
+ * The one exception is the command "begin", as the "begin" keyword
+ * is pushed onto the queue as "$" + "begin" + <Number of Exps in the Begin>.
+ * The "$" is so this exp is not mixed up as a user defined variable,
+ * since variables/functions cannot start with "$". The number of expressions
+ * is to indicate how many times the queue should be popped off when it 
+ * reaches the begin.
+ * 
+ * Examples:
+ *  "(if (set x 0) x 0)" returns [0, x, 0, x, set, if].
+ *  "(begin (begin 4 5) 5 (begin x) d)" returns [d, x, $begin1, 5, 5, 4, $begin2, $begin4]
+ * 
+ * @param {String} value : The entire string exp
+ * @returns {Array} : The queue that holds all of the expressions
+ * 
+ */
 function addValuesToQueue(value) {
     let queue = [];
     let index = 0;
@@ -107,6 +129,13 @@ function addValuesToQueue(value) {
     queueHelper(value, "", null);
     queue.reverse();
     return queue;
+    /**
+     * 
+     * @param {String} input 
+     * @param {String} string 
+     * @param {*} beginAmount 
+     * @returns 
+     */
     function queueHelper(input, string, beginAmount) {
         while (index < input.length) {
             const char = input[index];
@@ -150,7 +179,6 @@ function addValuesToQueue(value) {
 }
 // ticks carry the ticks from before
 function derive(exp, execute) {
-    console.log('exp is', exp);
     numberDerivations++;
     if (numberDerivations > numberDerivationsCap) {
         throw new Error("Nested derivation is too deep.");
@@ -288,7 +316,7 @@ function IF(execute) {
     const trueCase = derive(Queue.pop(), condition.value != 0 && execute);
     const falseCase = derive(Queue.pop(), condition.value == 0 && execute);
     const syntax = `If(${condition.syntax}, ${trueCase.syntax}, ${falseCase.syntax})`;
-    console.log(condition, trueCase, falseCase);
+
     if (condition.value == 0) {
         branch = falseCase;
         title = "IfFalse";
@@ -524,7 +552,6 @@ function APPLY(funName, execute) {
         ticks['rho_ticks'] = 0;
         Queue = Queue.concat(funInfo.exp);
         body = derive(Queue.pop(), true);
-        console.log(body);
         value = body.value;
         ticks['rho_ticks'] = beforeRhoTicks;
         derivation = applyUserDerivation(funName, syntax, params, body, paramsInfo, beforeTicks);
