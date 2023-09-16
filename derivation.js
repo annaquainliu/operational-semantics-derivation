@@ -293,13 +293,13 @@ function VAR(name, execute) {
         if (variable.env == "rho") {
             derivation = html ? new Rules.Var('FormalVar', variable.env, name, variable.value, envInfo, envInfo) 
                               : Latex.VarLatex('FormalVar', name, `${name} \\in dom \\rho${rhoTicks}`, 
-                                                `$\\rho${rhoTicks}(${name})$`, ticks);
+                                                `${variable.value}`, ticks);
         } 
         else {
             derivation = html ? new Rules.Var('GlobalVar', variable.env, name, variable.value, envInfo, envInfo)
                               : Latex.VarLatex('GlobalVar', name, 
                                         `${name} \\notin dom \\rho${rhoTicks} \\and ${name} \\in dom \\xi${xiTicks}`,
-                                        `$\\xi${xiTicks}(${name})$`, ticks);
+                                        `${variable.value}`, ticks);
         }
     }
     return {"syntax" : `Var(${name})`, 
