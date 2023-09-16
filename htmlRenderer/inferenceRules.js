@@ -226,7 +226,7 @@ class Var extends InferenceRule {
     constructor(title, env, name, value, beforeEnv, afterEnv) {
         const conditions = Var.scopeCondition(env, name, beforeEnv);
         const ticks = State.getTicksFromEnvs(afterEnv, env);
-        super(title, conditions, `Var(${name})`, `${State.envs[env]}${ticks}(${name})`, beforeEnv, afterEnv);
+        super(title, conditions, `Var(${name})`, `${value}`, beforeEnv, afterEnv);
         this.result = value;
     }
 
