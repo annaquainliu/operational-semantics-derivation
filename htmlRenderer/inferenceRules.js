@@ -13,14 +13,16 @@ class State extends HtmlElement {
     static noEnvInfo = null;
     static syntax = new Syntax("{", "}", State.xi, State.rho, State.phi, State.mapsTo, "<sub>", "</sub>", State.langle, State.rangle);
 
-    constructor(rhoInfo, xiInfo, param) {
-        
-        super('div', {}, [], `${State.langle}${param},${envNotation("xi", xiInfo)},${State.phi},${rho_env}${State.rangle}`, {});
+    constructor(rho, phi, xi, param) {
+        const xi_notation = envNotation("xi", xi)
+        const phi_notation = envNotation("phi", phi);
+        const rho_notation = envNotation("rho", rho);
+        super('div', {}, [], `${State.langle}${param},${xi_notation},${phi_notation},${rho_notation}${State.rangle}`, {});
         this.param = param;
     }
 
     static unchangedState(param) {
-        return new State(State.noEnvInfo, State.noEnvInfo, param);
+        return new State(State.noEnvInfo, State.noEnvInfo, State.noEnvInfo, param);
     }
 
     /**
@@ -108,13 +110,10 @@ class InferenceRule extends HtmlElement {
     /**
      * 
      * @param {String} syntax : The AST of the expression/value
-     * @param {JSON} envInfo : {ticks : 
-     *                              {rho_ticks : number, 
-     *                               xi_ticks: number}, 
-     *                          mapping : 
-     *                               {rho : {name : string, value : number},
-     *                               {xi : {name : string, value : number}}}
-     *                         } 
+     * @param {JSON} xi : global env
+     * @param {JSON} rho : param env
+     * @param {JSON} phi : fun env
+     * 
      * @returns {State} 
      */
     static makeState(syntax, envInfo) {
@@ -162,7 +161,6 @@ class Var extends InferenceRule {
 
     constructor(title, env, name, value, beforeEnv, afterEnv) {
         const conditions = Var.scopeCondition(env, name, beforeEnv);
-        const ticks = State.getTicksFromEnvs(afterEnv, env);
         super(title, conditions, `Var(${name})`, `${value}`, beforeEnv, afterEnv);
         this.result = value;
     }

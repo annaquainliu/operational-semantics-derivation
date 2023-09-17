@@ -41,6 +41,16 @@ function translateEnvIntoWords(env, obj, syntax) {
     return string;
 }
 
+class EnvChanges {
+
+    constructor(xi, phi, rho_1, rho_2) {
+        this.xi = xi;
+        this.phi = phi;
+        this.rho_1 = rho_1;
+        this.rho_2 = rho_2;
+    }
+}
+
 class Syntax {
     /**
      * 
@@ -69,4 +79,4 @@ class Syntax {
     }
 }
 
-export default {translateEnvIntoWords, Syntax: Syntax};
+export default {translateEnvIntoWords, Syntax: Syntax, EnvChanges: EnvChanges};

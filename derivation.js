@@ -367,14 +367,14 @@ function SET(execute) {
     const variable = derive(Queue.pop(), execute); 
     const exp = derive(Queue.pop(), execute);
     const env = findVarInfo(variable.name).env;
-    const syntax = `Set(${variable.syntax}, ${exp.syntax})`;
+    const syntax = `Set(${variable.name}, ${exp.syntax})`;
     if (execute) {
         let title = env == "xi" ? 'GlobalAssign' : 'FormalAssign';
         derivation = html ? setHTML(env, title, syntax, variable, exp, beforeTicks)
                           : setLatex(env, title, exp, variable, beforeTicks)
         let environment = {"rho" : rho, "xi" : xi};
         environment[env][variable.name] = exp.value;
-        ticks[`${env}_ticks`]++;
+       
     }
     return {"syntax" : syntax,
             "value" : exp.value,
