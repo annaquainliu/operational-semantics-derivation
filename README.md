@@ -49,19 +49,12 @@ Expression : `(if (set x 1) (if y x 45) 99)`
 Environments : `ρ = {x -> 1}`, `ξ = {y -> 13}`
 
 Latex Output: 
-`\begin{adjustbox}{width=\columnwidth,center}
-$
-\inferrule*[Right=\textsc{IfTrue}]{\inferrule*[Right=\textsc{FormalAssign}]{x \in dom \rho \and \inferrule*[Right=\textsc{Literal}]{\ }{\state{\textsc{Literal(1)}}{\xi}{\phi}{\rho}\Downarrow\state{1}{\xi}{\phi}{\rho}}}{\state{\textsc{Set(Var(x), Literal(1))}}{\xi}{\phi}{\rho} \Downarrow \state{1}{\xi}{\phi}{\rho\{x\mapsto1\}}} \and 1 \neq 0 \and \inferrule*[Right=\textsc{IfTrue}]{\inferrule*[Right=\textsc{GlobalVar}]{y \notin dom \rho' \and y \in dom \xi}{\state{\textsc{Var(y)}}{\xi}{\phi}{\rho'}\Downarrow\state{\xi(y)}{\xi}{\phi}{\rho'}} \and 13 \neq 0 \and \inferrule*[Right=\textsc{FormalVar}]{x \in dom \rho'}{\state{\textsc{Var(x)}}{\xi}{\phi}{\rho'}\Downarrow\state{\rho'(x)}{\xi}{\phi}{\rho'}}}{\state{\textsc{If(Var(y), Var(x), Literal(45))}}{\xi}{\phi}{\rho'} \Downarrow \state{1}{\xi}{\phi}{\rho'}}}{\state{\textsc{If(Set(Var(x), Literal(1)), If(Var(y), Var(x), Literal(45)), Literal(99))}}{\xi}{\phi}{\rho} \Downarrow \state{1}{\xi}{\phi}{\rho'}}
-$
-\end{adjustbox}`
-
+`\documentclass[11pt]{article} \usepackage[T1]{fontenc} \usepackage{alltt} \usepackage{verbatim} \usepackage{hyperref} \usepackage{amsmath} \usepackage{amssymb} \usepackage{qtree} \usepackage{semantic} \usepackage{mathpartir} \usepackage{adjustbox} \begin{document} \newcommand{\br}[1]{\langle #1 \rangle}\newcommand{\state}[4]{\langle {#1,#2,#3,#4} \rangle}\newcommand{\evalr}[2][{}]{\state{#2}{\xi#1}{\phi}{\rho#1}}\begin{adjustbox}{width=\columnwidth,center}$\inferrule*[Right=\textsc{IfTrue}]{\inferrule*[Right=\textsc{GlobalAssign}]{x \notin dom(\rho) \and x \in dom(\xi) \and \inferrule*[Right=\textsc{Literal}]{ \ }{\state{\textsc{Literal(1)}}{\xi}{\phi}{\rho} \Downarrow \state{\textsc{1}}{\xi}{\phi}{\rho}}}{\state{\textsc{Set(x, Literal(1))}}{\xi}{\phi}{\rho} \Downarrow \state{\textsc{1}}{\xi\{ x \mapsto 1 \}}{\phi}{\rho}} \and 1 \neq 0 \and \inferrule*[Right=\textsc{IfTrue}]{\inferrule*[Right=\textsc{GlobalVar}]{y \notin dom(\rho) \and y \in dom(\xi\{ x \mapsto 1 \})}{\state{\textsc{Var(y)}}{\xi\{ x \mapsto 1 \}}{\phi}{\rho} \Downarrow \state{\textsc{13}}{\xi\{ x \mapsto 1 \}}{\phi}{\rho}} \and 13 \neq 0 \and \inferrule*[Right=\textsc{GlobalVar}]{x \notin dom(\rho) \and x \in dom(\xi\{ x \mapsto 1 \})}{\state{\textsc{Var(x)}}{\xi\{ x \mapsto 1 \}}{\phi}{\rho} \Downarrow \state{\textsc{1}}{\xi\{ x \mapsto 1 \}}{\phi}{\rho}}}{\state{\textsc{If(Var(y), Var(x), Literal(45))}}{\xi\{ x \mapsto 1 \}}{\phi}{\rho} \Downarrow \state{\textsc{1}}{\xi\{ x \mapsto 1 \}}{\phi}{\rho}}}{\state{\textsc{If(Set(x, Literal(1)), If(Var(y), Var(x), Literal(45)), Literal(99))}}{\xi}{\phi}{\rho} \Downarrow \state{\textsc{1}}{\xi\{ x \mapsto 1 \}}{\phi}{\rho}}$\end{adjustbox}\end{document}`
 Image of Latex Output:
+<img width="937" alt="Screenshot 2023-09-18 at 6 52 47 PM" src="https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/d0a1ec9f-f829-42ad-bd3e-6b570dcd5151">
 
-![image (3)](https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/1a1fd150-860c-4ab2-8c2a-e99c14fc7839)
-
-HTML Output:
-
-<img width="909" alt="image" src="https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/a0801ad1-b5ed-4173-ab5e-ce52bb5fa523">
+Image of HTML Output:
+<img width="1439" alt="Screenshot 2023-09-18 at 6 50 27 PM" src="https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/788955d3-56aa-4767-a6d7-f69c342a5aa3">
 
 ## How to Read Opsem
 The conditions for the all of rules are read from bottom to the top.
