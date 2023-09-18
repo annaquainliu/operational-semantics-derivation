@@ -31,8 +31,26 @@ function LiteralLatex(number, envs) {
     return baseInferenceRule('Literal', " \\ ", `Literal(${number})`, number, envs);
 }
 
-function VarLatex(title, name, scope, result, envs) {
+/**
+ * 
+ * @param {String} title 
+ * @param {String} name 
+ * @param {String} env 
+ * @param {Int} result 
+ * @param {EnvChanges} envs 
+ * @returns 
+ */
+function VarLatex(title, name, env, result, envs) {
+   let scope = getVarScope(name, env)
    return baseInferenceRule(title, scope, `Var(${name})`, result, envs);
+}
+
+function getVarScope(name, env) {
+    if (env == "rho") {
+        return`${name} \\in dom \\rho`
+    } else {
+        return `${name} \\notin dom \\rho \\and ${name} \\in dom \\xi`
+    }
 }
 
 function IfLatex(title, syntax, cond_derivation, condition, branch_derivation, result, envs) {
@@ -40,7 +58,9 @@ function IfLatex(title, syntax, cond_derivation, condition, branch_derivation, r
                             syntax, result, envs);
 }
 
-function SetLatex(title, conditions, exp, variable, envs) {
+function SetLatex(title, exp, variable, envs, env) {
+    let scope = getVarScope(variable.name, env)
+    let conditions = scope + " \\and " + exp.derivation;
     return baseInferenceRule(title, conditions, `Set(${variable.name}, ${exp.syntax})`, exp.value, envs);
 }
 

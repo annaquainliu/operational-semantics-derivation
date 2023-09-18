@@ -1,5 +1,5 @@
 import HtmlElement from './htmlElement.js';
-import {Syntax, translateEnvIntoWords} from "../utilities/environment.js"
+import {Syntax, translateEnvIntoWords, EnvChanges} from "../utilities/environment.js"
 
 class State extends HtmlElement {
     static xi = 'ξ';
@@ -13,16 +13,20 @@ class State extends HtmlElement {
     static noEnvInfo = null;
     static syntax = new Syntax("{", "}", State.xi, State.rho, State.phi, State.mapsTo, "<sub>", "</sub>", State.langle, State.rangle);
 
-    constructor(rho, phi, xi, param) {
-        const xi_notation = envNotation("xi", xi)
-        const phi_notation = envNotation("phi", phi);
-        const rho_notation = envNotation("rho", rho);
-        super('div', {}, [], `${State.langle}${param},${xi_notation},${phi_notation},${rho_notation}${State.rangle}`, {});
+    /**
+     * 
+     * @param {String} rho 
+     * @param {String} phi 
+     * @param {String} xi 
+     * @param {String} param 
+     */
+    constructor(xi, phi, rho, param) {
+        super('div', {}, [], `${State.langle}${param},${xi},${phi},${rho}${State.rangle}`, {});
         this.param = param;
     }
 
     static unchangedState(param) {
-        return new State(State.noEnvInfo, State.noEnvInfo, State.noEnvInfo, param);
+        return new State(`${State.rho} = {}`, `${State.phi} = {}`,`${State.phi} = {}`, param);
     }
 
     /**
@@ -84,9 +88,13 @@ class Conditions extends HtmlElement {
 
 class InferenceRule extends HtmlElement {
 
-    constructor(title, conditions, syntax, result, beforeEnv, afterEnv) {
-        const initialState = InferenceRule.makeState(syntax, beforeEnv);
-        const finalState = InferenceRule.makeState(result, afterEnv);
+    constructor(title, conditions, syntax, result, envs) {
+        const xi = State.envNotation("xi", envs.xi);
+        const phi = State.envNotation("phi", envs.phi);
+        const rho_1 = State.envNotation("phi", envs.rho_1);
+        const rho_2 = State.envNotation("phi", envs.rho_2);
+        const initialState = new State(xi, phi, rho_1, syntax);
+        const finalState = new State(xi, phi, rho_2, result);
         const judgement = new Judgement(initialState, finalState);
         const ruleStyle = {width : 'fit-content', height : 'fit-content', display : 'flex', 
                            'flex-direction' : 'column', 'white-space': 'nowrap'};
@@ -107,27 +115,12 @@ class InferenceRule extends HtmlElement {
         this.result = finalState.param;
     }
 
-    /**
-     * 
-     * @param {String} syntax : The AST of the expression/value
-     * @param {JSON} xi : global env
-     * @param {JSON} rho : param env
-     * @param {JSON} phi : fun env
-     * 
-     * @returns {State} 
-     */
-    static makeState(syntax, envInfo) {
-        return new State(State.envInfo(envInfo.ticks.rho_ticks, envInfo.mapping.rho),
-                         State.envInfo(envInfo.ticks.xi_ticks, envInfo.mapping.xi), 
-                         syntax);
-    }
-
 }
 
 class If extends InferenceRule {
 
     constructor(title, syntax, result, cond_derive, cond_result, 
-                                branch_derive, beforeEnv, afterEnv) {
+                                branch_derive, envs) {
         let condition;
         if (cond_result == 0) {
             condition = HtmlElement.conditionText(`${cond_result} = 0`, 'row');
@@ -135,44 +128,42 @@ class If extends InferenceRule {
             condition = HtmlElement.conditionText(`${cond_result} ≠ 0`, 'row');
         }
         const conditions = new Conditions([cond_derive, condition, branch_derive], 'row');
-        super(title, conditions, syntax, result, beforeEnv, afterEnv);
+        super(title, conditions, syntax, result, envs);
     }
     
 }
 
 class Literal extends InferenceRule {
 
-    constructor(value, beforeEnv, afterEnv) {
+    constructor(value, envs) {
         super("Literal", new Conditions([HtmlElement.space()], 'row'), `Literal(${value})`, 
-              value, beforeEnv, afterEnv);
+              value, envs);
     }
 }
 
 class Set extends InferenceRule {
 
-    constructor(title, syntax, env, name, exp, beforeEnv, afterEnv) {
-        let conditions = Var.scopeCondition(env, name, beforeEnv);
+    constructor(title, syntax, env, name, exp, envs) {
+        let conditions = Var.scopeCondition(env, name);
         conditions.addCondition(exp);
-        super(title, conditions, syntax, exp.result, beforeEnv, afterEnv);
+        super(title, conditions, syntax, exp.result, envs);
     }
 }
 
 class Var extends InferenceRule {
 
-    constructor(title, env, name, value, beforeEnv, afterEnv) {
-        const conditions = Var.scopeCondition(env, name, beforeEnv);
-        super(title, conditions, `Var(${name})`, `${value}`, beforeEnv, afterEnv);
+    constructor(title, env, name, value, envs) {
+        const conditions = Var.scopeCondition(env, name);
+        super(title, conditions, `Var(${name})`, `${value}`, envs);
         this.result = value;
     }
 
-    static scopeCondition(env, name, beforeEnv) {
-        const rhoTicks = State.getTicksFromEnvs(beforeEnv, 'rho');
-        const xiTicks = State.getTicksFromEnvs(beforeEnv, 'xi');
+    static scopeCondition(env, name) {
         if (env == "rho") {
-            return new Conditions([HtmlElement.conditionText(`${name} ∈ dom ${State.rho}${rhoTicks}`, 'row')], 'row');
+            return new Conditions([HtmlElement.conditionText(`${name} ∈ dom ${State.rho}`, 'row')], 'row');
         } else {
-            return new Conditions([HtmlElement.conditionText(`${name} ∉ dom ${State.rho}${rhoTicks}`, 'row'), 
-                                  HtmlElement.conditionText(`${name} ∈ dom ${State.xi}${xiTicks}`, 'row')], 
+            return new Conditions([HtmlElement.conditionText(`${name} ∉ dom ${State.rho}`, 'row'), 
+                                  HtmlElement.conditionText(`${name} ∈ dom ${State.xi}`, 'row')], 
                                   'row');
         }
     }
@@ -180,16 +171,16 @@ class Var extends InferenceRule {
 
 class Begin extends InferenceRule {
 
-    constructor(title, syntax, result, exp_derivations, beforeEnv, afterEnv) {
+    constructor(title, syntax, result, exp_derivations, envs) {
         exp_derivations.reverse();
         const conditions = new Conditions(exp_derivations, 'column');
-        super(title, conditions, `Begin(${syntax})`, result, beforeEnv, afterEnv);
+        super(title, conditions, `Begin(${syntax})`, result, envs);
     }
 }
 
 class While extends InferenceRule {
 
-    constructor(title, syntax, next_while, cond_derive, exp_derive, beforeEnv, afterEnv) {
+    constructor(title, syntax, next_while, cond_derive, exp_derive, envs) {
         let conditionsArray = [cond_derive];
         if (cond_derive.result == 0) {
             conditionsArray.push(HtmlElement.conditionText(`${cond_derive.result} = 0`, 'row'));
@@ -200,7 +191,7 @@ class While extends InferenceRule {
         }
         const conditions = new Conditions(conditionsArray, 'row');
         const nextWhileCondition = new Conditions([next_while, conditions], 'column');
-        super(title, nextWhileCondition, syntax, 0, beforeEnv, afterEnv);
+        super(title, nextWhileCondition, syntax, 0, envs);
     }   
 }
 
@@ -208,12 +199,12 @@ class Apply extends InferenceRule {
 
     static leq = '≤';
     static neq = '≠';
-    constructor(title, syntax, result, condInfo, beforeEnv, afterEnv) {
+    constructor(title, syntax, result, condInfo, envs) {
         const functionCondition = HtmlElement.conditionText(`${State.phi}(${condInfo.name}) = Primitive(${condInfo.name})`, 'column');
         let eqText = Apply.makeEqString(condInfo.name, condInfo.exp_1.result, condInfo.exp_2.result, result);
         const eqString = HtmlElement.conditionText(eqText, 'column');
         const conditions = new Conditions([eqString, condInfo.exp_2, condInfo.exp_1, functionCondition], 'column');
-        super(title, conditions, syntax, result, beforeEnv, afterEnv);
+        super(title, conditions, syntax, result, envs);
     }   
 
     static makeCondInfo(functionName, exp1_element, exp2_element) {
@@ -237,7 +228,7 @@ class Apply extends InferenceRule {
 
 class ApplyUser extends InferenceRule {
 
-    constructor(funName, syntax, paramNames, paramsInfos, body, beforeEnv, afterEnv) {
+    constructor(funName, syntax, paramNames, paramsInfos, body, envs) {
         const paramsString = paramNames.toString();
         let allDistinctCond;
         if (paramsString == "") {
@@ -245,7 +236,7 @@ class ApplyUser extends InferenceRule {
         } else {
             allDistinctCond = HtmlElement.conditionText(`${paramsString} all distinct`, 'column');
         }
-        const rhoAndParams = ApplyUser.makeRhoAndParams(paramsInfos);
+        const rhoAndParams = makeRhoAndParams(paramsInfos);
         const conditionList = [body.derivation, 
                               HtmlElement.conditionText(`${State.rho} = ${rhoAndParams.rhoMapping}`, 'column')]
                               .concat(rhoAndParams.paramsDerivations)
@@ -254,7 +245,7 @@ class ApplyUser extends InferenceRule {
                                 HtmlElement.conditionText(`${State.rho}(${funName}) = User(${State.langle}${paramsString}${State.rangle}, ${body.syntax})`, 'column')
                               ]);
         const conditions = new Conditions(conditionList, 'column');
-        super('ApplyUser', conditions, syntax, body.value, beforeEnv, afterEnv);
+        super('ApplyUser', conditions, syntax, body.value, envs);
     }
 
     /**
@@ -263,7 +254,7 @@ class ApplyUser extends InferenceRule {
      * @param {Array of JSON} paramsInfo 
      * @returns {JSON} : {rhoMapping : string, paramsDerivations : Array of HtmlElement}
      */
-    static makeRhoAndParams(paramsInfo) {
+    makeRhoAndParams(paramsInfo) {
         if (paramsInfo.length == 0) {
             return {'rhoMapping' : '{}', 'paramsDerivations' : []};
         }

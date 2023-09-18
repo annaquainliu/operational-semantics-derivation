@@ -43,6 +43,13 @@ function translateEnvIntoWords(env, obj, syntax) {
 
 class EnvChanges {
 
+    /**
+     * 
+     * @param {JSON} xi 
+     * @param {JSON} phi 
+     * @param {JSON} rho_1 : represents the initial rho
+     * @param {JSON} rho_2 : represents the final rho
+     */
     constructor(xi, phi, rho_1, rho_2) {
         this.xi = xi;
         this.phi = phi;
