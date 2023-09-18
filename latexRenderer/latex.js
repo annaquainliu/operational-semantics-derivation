@@ -1,56 +1,80 @@
-function ticks(ticks, env) {
-    return `'`.repeat(ticks[env + '_ticks']);
+
+/**
+ * 
+ * @param {String} name : Name of inference rule
+ * @param {String} condition : Conditions of the inference rule
+ * @param {String} exp_syntax : Abstract syntax of expression 
+ * @param {String} result : The return value 
+ * @param {JSON} initialState : {String : String}
+ * @param {JSON} finalState : {String : String}
+ * @returns {String} : Inference rule derivation in Latex code.
+ * 
+ * xi or phi cannot change
+ */
+function baseInferenceRule(name, condition, exp_syntax, result, initial, final) {
+    return  `\\inferrule*[Right=\\textsc{${name}}]{${condition}}{\\state{\\textsc{${exp_syntax}}}{\\xi${initial.xi}}{\\phi}{\\rho${initial.rho}} \\Downarrow \\state{\\textsc{${result}}}{\\xi${final.xi}}{\\phi}{\\rho${final.rho}}}`;
 }
 
-function baseInferenceRule(name, condition, exp_syntax, result, ticks_1, ticks_2) {
-    let envChanges = [ticks(ticks_2, 'xi'), ticks(ticks_2, 'rho')];
-    //add mapping if inference rule is set
-    if (ticks_2.mapping != null) {
-        envChanges[ticks_2.mapping.index] += ticks_2.mapping.map;
+/**
+ * 
+ * @param {Int} number 
+ * @returns nothing
+ */
+function LiteralLatex(number, state) {
+    return baseInferenceRule('Literal', " \\ ", `Literal(${number})`, number, state, state);
+}
+
+/**
+ * 
+ * @param {String} title 
+ * @param {String} name 
+ * @param {String} env 
+ * @param {Int} result 
+ * @returns 
+ */
+function VarLatex(title, name, env, result, state) {
+   let scope = getVarScope(name, env, state)
+   return baseInferenceRule(title, scope, `Var(${name})`, result, state, state);
+}
+
+function getVarScope(name, env, state) {
+    if (env == "rho") {
+        return`${name} \\in dom(\\rho${state.rho})`
+    } else {
+        return `${name} \\notin dom(\\rho${state.rho}) \\and ${name} \\in dom(\\xi${state.xi})`
     }
-    return  `\\inferrule*[Right=\\textsc{${name}}]{${condition}}{\\state{\\textsc{${exp_syntax}}}{\\xi${ticks(ticks_1, 'xi')}}{\\phi}{\\rho${ticks(ticks_1, 'rho')}} \\Downarrow \\state{\\textsc{${result}}}{\\xi${envChanges[0]}}{\\phi}{\\rho${envChanges[1]}}}`;
 }
 
-function LiteralLatex(number, ticks) {
-    return baseInferenceRule('Literal', " \\ ", `Literal(${number})`, number, ticks, ticks);
-}
+function IfLatex(title, syntax, cond_derivation, condition, branch_derivation, result, initial, final) {
 
-function VarLatex(title, name, scope, result, ticks) {
-   return baseInferenceRule(title, scope, `Var(${name})`, result, ticks, ticks);
-}
-
-function IfLatex(title, syntax, cond_derivation, condition, branch_derivation, result, ticks_1, ticks_2) {
     return baseInferenceRule(title, `${cond_derivation} \\and ${condition} \\and ${branch_derivation}`,
-                            syntax, result, ticks_1, ticks_2);
+                            syntax, result, initial, final);
 }
 
-function SetLatex(title, conditions, exp, variable, map, ticks_1, ticks_2) {
-    const afterTicksCopy = JSON.parse(JSON.stringify(ticks_2));
-    afterTicksCopy['mapping'] = map;
-    return baseInferenceRule(title, conditions, `Set(${variable.syntax}, ${exp.syntax})`, exp.value, ticks_1, afterTicksCopy);
+function SetLatex(title, exp, variable, env, initial, final) {
+    let scope = getVarScope(variable.name, env, initial)
+    let conditions = scope + " \\and " + exp.derivation;
+    return baseInferenceRule(title, conditions, `Set(${variable.name}, ${exp.syntax})`, exp.value, initial, final);
 }
 
-function BeginLatex(title, derivations, exps_syntax, result, ticks_1, ticks_2) {
-    
-    return baseInferenceRule(title, derivations, `Begin(${exps_syntax})`, result, ticks_1, ticks_2);
+function BeginLatex(title, derivations, exps_syntax, result, initial, final) {
+    return baseInferenceRule(title, derivations, `Begin(${exps_syntax})`, result, initial, final);
 }
 
-function WhileLatex(title, next_while, condition, exp, eqCondition, ticks_1, ticks_2) {
+function WhileLatex(title, next_while, condition, exp, eqCondition, initial, final) {
     if (exp.derivation == null) {
         exp.derivation = "";
     }
     return baseInferenceRule(title, `${next_while} \\\\\\\\ ${condition.derivation} \\and ${eqCondition} \\and ${exp.derivation}`, `While(${condition.syntax}, ${exp.syntax})`,
                             0,
-                            ticks_1,
-                            ticks_2);
+                            initial, final);
 }
 
-function ApplyLatex(title, functionName, exp_1, exp_2, eqString, result, ticks_1, ticks_2) {
+function ApplyLatex(title, functionName, exp_1, exp_2, eqString, result, initial, final) {
     return baseInferenceRule(title, `${eqString} \\\\\\\\ ${exp_2.derivation} \\\\\\\\ ${exp_1.derivation} \\\\\\\\ \\phi(${functionName}) = \\textsc{Primitive}(${functionName})`,
                             `Apply(${functionName}, ${exp_1.syntax}, ${exp_2.syntax})`,
                             result,
-                            ticks_1,
-                            ticks_2);
+                            initial, final);
 }
 
 /**
@@ -64,7 +88,7 @@ function ApplyLatex(title, functionName, exp_1, exp_2, eqString, result, ticks_1
  * @param {JSON} ticks_2 
  * @returns {String} 
  */
-function ApplyUserLatex(funcName, syntax, paramNames, exp, paramsInfo, ticks_1, ticks_2) {
+function ApplyUserLatex(funcName, syntax, paramNames, exp, paramsInfo, initial, final) {
     const paramsString = paramNames.toString();
     let paramsDerivations = "";
     let mapping = " \\{";
@@ -74,12 +98,12 @@ function ApplyUserLatex(funcName, syntax, paramNames, exp, paramsInfo, ticks_1, 
     }
     mapping = mapping.substring(0, mapping.length - 1) + "\\}";
     return baseInferenceRule('ApplyUser',
-                            `${exp.derivation}  \\\\\\\\  \\rho = ${mapping} ${paramsDerivations} \\\\\\\\ ${paramsString} \\text{ all distinct} \\\\\\\\ \\phi(\\textsc{${funcName}}) = \\textsc{User}(\\langle \\textsc{${paramsString}} \\rangle, \\textsc{${exp.syntax}})`,
+                            `${exp.derivation}  \\\\\\\\  \\rho_{${initial.count + 1}} = ${mapping} ${paramsDerivations} \\\\\\\\ ${paramsString} \\text{ all distinct} \\\\\\\\ \\phi(\\textsc{${funcName}}) = \\textsc{User}(\\langle \\textsc{${paramsString}} \\rangle, \\textsc{${exp.syntax}})`,
                             syntax,
                             exp.value,
-                            ticks_1,
-                            ticks_2);
+                            initial, final);
 }
+
 export default {LiteralLatex, 
                 VarLatex, 
                 IfLatex, 
@@ -87,5 +111,4 @@ export default {LiteralLatex,
                 BeginLatex, 
                 WhileLatex, 
                 ApplyLatex, 
-                ApplyUserLatex,
-                ticks};
+                ApplyUserLatex};
