@@ -230,6 +230,8 @@ function derive(exp, execute) {
         case "<":
             return PRIMITIVE(exp, execute, {name : 'Lt', 
                                                     equation : (f, s) => f < s ? 1 : 0});
+        case "!=":
+            return PRIMITIVE(exp, execute, {name : "NotEq", equation: (f, s) => f != s ? 1 : 0})
         default:
            return VAR(exp, execute);
     }
