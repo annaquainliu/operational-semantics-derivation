@@ -368,8 +368,8 @@ function SET(execute) {
     if (execute) {
         let environment = {"rho" : rho, "xi" : xi};
         environment[env][variable.name] = exp.value;
-        let final = EnvChanges.saveState(html);
         EnvChanges.addMapToEnv(env, variable.name, exp.value, html)
+        let final = EnvChanges.saveState(html);
         let title = env == "xi" ? 'GlobalAssign' : 'FormalAssign';
         derivation = html ? setHTML(env, title, syntax, variable, exp, initial, final)
                           : setLatex(env, title, exp, variable, initial, final)
@@ -466,39 +466,43 @@ function _WHILE(execute) {
     const exp = derive(Queue.pop(), cond.value != 0 && execute);
     const syntax = `While(${cond.syntax}, ${exp.syntax})`;
     const beforeQueue = Queue;
+    let final = EnvChanges.saveState(html)
     if (execute) {
-        let final = EnvChanges.saveState(html)
-        derivation = html ? whileHTML(cond, exp, syntax, initial, final)
+        let result = html ? whileHTML(cond, exp, syntax, initial, final)
                           : whileLatex(cond, exp, initial, final);
+        derivation = result.derivation
+        final = result.final
     } 
     Queue = beforeQueue;
     return {"syntax" : syntax,
             "value" : 0,
             "derivation": derivation,
-            "impcore" : ['while'].concat(cond.impcore).concat(exp.impcore)};
+            "impcore" : ['while'].concat(cond.impcore).concat(exp.impcore),
+            "finalState" : final};
 }
 
 function whileHTML(cond, exp, syntax, initial, final) {
     
     if (cond.value == 0) {
-        return new Rules.While(`WhileEnd`, syntax, "", cond.derivation, 
-                                    exp.derivation, initial, final);
+        return {derivation : new Rules.While(`WhileEnd`, syntax, "", cond.derivation, exp.derivation, initial, final),
+                final : final};
     } else {
         Queue = cond.impcore.concat(exp.impcore).reverse();
-        const nextWhile = _WHILE(true, true).derivation;
-        return new Rules.While('WhileIterate', syntax, nextWhile, 
-                                cond.derivation, exp.derivation, initial, final);
+        const nextWhile = _WHILE(true, true);
+        return {derivation : new Rules.While('WhileIterate', syntax, nextWhile.derivation, cond.derivation, exp.derivation, initial, nextWhile.finalState),
+                final : nextWhile.finalState};
     }
 }
 
 function whileLatex(cond, exp, initial, final) {
     if (cond.value == 0) {
-        return Latex.WhileLatex('WhileEnd', "", cond, exp, 
-                                `${cond.value} = 0`, initial, final);
+        return {derivation : Latex.WhileLatex('WhileEnd', "", cond, exp, `${cond.value} = 0`, initial, final),
+                final : final};
     } else {
         Queue = cond.impcore.concat(exp.impcore).reverse();
-        return Latex.WhileLatex(`WhileIterate`, _WHILE(true, false).derivation, 
-                                cond, exp, `${cond.value} \\neq 0`, initial, final);
+        const nextWhile =  _WHILE(true)
+        return {derivation : Latex.WhileLatex(`WhileIterate`, nextWhile.derivation, cond, exp, `${cond.value} \\neq 0`, initial, nextWhile.finalState),
+                final : nextWhile.finalState};
     }
 }
 

@@ -141,10 +141,10 @@ class Var extends InferenceRule {
 
     static scopeCondition(env, name, state) {
         if (env == "rho") {
-            return new Conditions([HtmlElement.conditionText(`${name} ∈ dom ${State.rho}${state.rho}`, 'row')], 'row');
+            return new Conditions([HtmlElement.conditionText(`${name} ∈ dom(${State.rho}${state.rho})`, 'row')], 'row');
         } else {
-            return new Conditions([HtmlElement.conditionText(`${name} ∉ dom ${State.rho}${state.rho}`, 'row'), 
-                                  HtmlElement.conditionText(`${name} ∈ dom ${State.xi}${state.xi}`, 'row')], 
+            return new Conditions([HtmlElement.conditionText(`${name} ∉ dom(${State.rho}${state.rho})`, 'row'), 
+                                  HtmlElement.conditionText(`${name} ∈ dom(${State.xi}${state.xi})`, 'row')], 
                                   'row');
         }
     }

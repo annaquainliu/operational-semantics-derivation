@@ -98,7 +98,7 @@ function ApplyUserLatex(funcName, syntax, paramNames, exp, paramsInfo, initial, 
     }
     mapping = mapping.substring(0, mapping.length - 1) + "\\}";
     return baseInferenceRule('ApplyUser',
-                            `${exp.derivation}  \\\\\\\\  \\rho = ${mapping} ${paramsDerivations} \\\\\\\\ ${paramsString} \\text{ all distinct} \\\\\\\\ \\phi(\\textsc{${funcName}}) = \\textsc{User}(\\langle \\textsc{${paramsString}} \\rangle, \\textsc{${exp.syntax}})`,
+                            `${exp.derivation}  \\\\\\\\  \\rho_{${initial.count + 1}} = ${mapping} ${paramsDerivations} \\\\\\\\ ${paramsString} \\text{ all distinct} \\\\\\\\ \\phi(\\textsc{${funcName}}) = \\textsc{User}(\\langle \\textsc{${paramsString}} \\rangle, \\textsc{${exp.syntax}})`,
                             syntax,
                             exp.value,
                             initial, final);
