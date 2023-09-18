@@ -6,7 +6,7 @@ const HtmlOutput = document.getElementById('HTMLOutput');
 import HtmlElement from './htmlRenderer/htmlElement.js';
 import Latex from './latexRenderer/latex.js';
 import Rules from './htmlRenderer/inferenceRules.js';
-import {EnvChanges, Syntax} from './utilities/environment.js'
+import {EnvChanges} from './utilities/environment.js'
 
 HtmlOutput.style.fontSize = HtmlElement.fontSize;
 
@@ -275,7 +275,7 @@ function findVarInfo(variable) {
 
 function LIT(number, execute) {
     let derivation;
-    let envs = new EnvChanges(xi, phi, rho, rho);
+    let envs = EnvChanges.saveState(html);
     if (execute) {
         if (html) {
             derivation = new Rules.Literal(number, envs);
@@ -300,7 +300,7 @@ function VAR(name, execute) {
         else {
            title = "GlobalVar"
         }
-        let envs = new EnvChanges(xi, phi, rho, rho);
+        let envs = EnvChanges.saveState(html);
         derivation = html ? new Rules.Var(title, variable.env, name, variable.value, envs) 
                             : Latex.VarLatex(title, name, variable.env, `${variable.value}`, envs);
     }
@@ -313,7 +313,7 @@ function VAR(name, execute) {
 
 function IF(execute) {
     let derivation, title, branch;
-    const rho_1 = JSON.parse(JSON.stringify(rho));
+    const initial = EnvChanges.saveState(html);
     const condition = derive(Queue.pop(), execute);
     const trueCase = derive(Queue.pop(), condition.value != 0 && execute);
     const falseCase = derive(Queue.pop(), condition.value == 0 && execute);
@@ -328,9 +328,9 @@ function IF(execute) {
     }
      //ticks obj is changed by reference
     if (execute) {
-        let envs = new EnvChanges(xi, phi, rho_1, rho)
-        derivation = html ? ifHTML(title, syntax, condition, branch, envs)
-                          : ifLatex(title, condition, syntax, branch, envs);
+        let final = EnvChanges.saveState(html)
+        derivation = html ? ifHTML(title, syntax, condition, branch, initial, final)
+                          : ifLatex(title, condition, syntax, branch, initial, final);
     }
     let impcore = ['if'].concat(condition.impcore).concat(trueCase.impcore).concat(falseCase.impcore);
     return {"syntax" : syntax, 
@@ -339,7 +339,7 @@ function IF(execute) {
             "impcore" : impcore};
 }
 
-function ifLatex(title, condition, syntax, branch, envs) {
+function ifLatex(title, condition, syntax, branch, initial, final) {
     let stringCondition;
     if (condition.value == 0) {
         stringCondition = `0 = 0`;
@@ -349,17 +349,17 @@ function ifLatex(title, condition, syntax, branch, envs) {
 
     return Latex.IfLatex(title, syntax, condition.derivation, 
         stringCondition, branch.derivation, 
-        branch.value, envs);
+        branch.value, initial, final);
 }
 
-function ifHTML(title, syntax, condition, branch, envs) {
+function ifHTML(title, syntax, condition, branch, initial, final) {
     return new Rules.If(title, syntax, branch.value, condition.derivation, 
-                condition.value, branch.derivation, envs);
+                condition.value, branch.derivation, initial, final);
 }
 
 function SET(execute) {
     let derivation;
-    const rho_1 = JSON.parse(JSON.stringify(rho));
+    const initial = EnvChanges.saveState(html);
     const variable = derive(Queue.pop(), execute); 
     const exp = derive(Queue.pop(), execute);
     const env = findVarInfo(variable.name).env;
@@ -368,10 +368,11 @@ function SET(execute) {
     if (execute) {
         let environment = {"rho" : rho, "xi" : xi};
         environment[env][variable.name] = exp.value;
-        let envs = new EnvChanges(xi, phi, rho_1, rho);
+        let final = EnvChanges.saveState(html);
+        EnvChanges.addMapToEnv(env, variable.name, exp.value, html)
         let title = env == "xi" ? 'GlobalAssign' : 'FormalAssign';
-        derivation = html ? setHTML(env, title, syntax, variable, exp, envs)
-                          : setLatex(env, title, exp, variable, envs)
+        derivation = html ? setHTML(env, title, syntax, variable, exp, initial, final)
+                          : setLatex(env, title, exp, variable, initial, final)
     }
     return {"syntax" : syntax,
             "value" : exp.value,
@@ -379,19 +380,19 @@ function SET(execute) {
             "impcore" : ['set'].concat(variable.impcore).concat(exp.impcore)};
 }
 
-function setLatex(env, title, exp, variable, envs) {
-    return Latex.SetLatex(title, exp, variable, envs, env);
+function setLatex(env, title, exp, variable, initial, final) {
+    return Latex.SetLatex(title, exp, variable, env, initial, final);
 }
 
-function setHTML(env, title, syntax, variable, exp, envs) {
-    return new Rules.Set(title, syntax, env, variable.name, exp.derivation, envs);
+function setHTML(env, title, syntax, variable, exp, initial, final) {
+    return new Rules.Set(title, syntax, env, variable.name, exp.derivation, initial, final);
 }
 
 function BEGIN(exp, execute) {
     const n_amnt = parseInt(exp.split("$begin")[1]);
     let value = 0;
     let exps_syntax = "";
-    let rho_1 = JSON.parse(JSON.stringify(rho));
+    let initial = EnvChanges.saveState(html)
     let derivation, expression;
     let exps_derivations = html ? [] : "";
     let impcore = [exp];
@@ -405,15 +406,15 @@ function BEGIN(exp, execute) {
     exps_syntax = exps_syntax.substring(0, exps_syntax.length - 2);
     const syntax = exps_syntax;
     if (execute) {
-        let envs = new EnvChanges(xi, phi, rho_1, rho);
+        let final = EnvChanges.saveState(html);
         if (n_amnt == 0) {
-            derivation = html ? new Rules.Begin('EmptyBegin', syntax, 0, exps_derivations, envs)
-                              : Latex.BeginLatex('EmptyBegin', " \\ ", syntax, 0, envs);
+            derivation = html ? new Rules.Begin('EmptyBegin', syntax, 0, exps_derivations, initial, final)
+                              : Latex.BeginLatex('EmptyBegin', " \\ ", syntax, 0, initial, final);
         }
         else {
             value = expression.value;
-            derivation = html ? new Rules.Begin('Begin', syntax, value, exps_derivations, envs)
-                              : Latex.BeginLatex('Begin', exps_derivations, syntax, value, envs);
+            derivation = html ? new Rules.Begin('Begin', syntax, value, exps_derivations, initial, final)
+                              : Latex.BeginLatex('Begin', exps_derivations, syntax, value, initial, final);
         }
     }
     return {"syntax" : `Begin(${syntax})`, 
@@ -426,7 +427,7 @@ function PRIMITIVE(exp, execute, functionInfo) {
     const symbol = exp == "&&" ? "\\&\\&" : exp;
     let derivation;
     let title = `Apply${functionInfo.name}`;
-    const rho_1 = JSON.parse(JSON.stringify(rho));
+    const initial = EnvChanges.saveState(html);
     const first = derive(Queue.pop(), execute);
     const second = derive(Queue.pop(), execute);
     const result = functionInfo.equation(first.value, second.value);
@@ -445,12 +446,12 @@ function PRIMITIVE(exp, execute, functionInfo) {
                 title = 'ApplyEqTrue';
             }
         }
-        const envs = new EnvChanges(xi, phi, rho_1, rho);
+        const final = EnvChanges.saveState(html);
         derivation = html ? new Rules.Apply(title, syntax, result, 
                             Rules.Apply.makeCondInfo(exp, first.derivation, second.derivation),
-                            envs)
+                            initial, final)
                           : Latex.ApplyLatex(title, symbol, first, second,
-                                             eqString, result, envs);
+                                             eqString, result, initial, final);
     }
     return {"syntax" : syntax,
             "value" : result,
@@ -460,15 +461,15 @@ function PRIMITIVE(exp, execute, functionInfo) {
 
 function _WHILE(execute) {
     let derivation;
-    const rho_1 = JSON.parse(JSON.stringify(rho));
+    const initial = EnvChanges.saveState(html)
     const cond = derive(Queue.pop(), execute);
     const exp = derive(Queue.pop(), cond.value != 0 && execute);
     const syntax = `While(${cond.syntax}, ${exp.syntax})`;
     const beforeQueue = Queue;
     if (execute) {
-        let envs = new (xi, phi, rho_1, rho)
-        derivation = html ? whileHTML(cond, exp, syntax, envs)
-                          : whileLatex(cond, exp, envs);
+        let final = EnvChanges.saveState(html)
+        derivation = html ? whileHTML(cond, exp, syntax, initial, final)
+                          : whileLatex(cond, exp, initial, final);
     } 
     Queue = beforeQueue;
     return {"syntax" : syntax,
@@ -477,27 +478,27 @@ function _WHILE(execute) {
             "impcore" : ['while'].concat(cond.impcore).concat(exp.impcore)};
 }
 
-function whileHTML(cond, exp, syntax, envs) {
+function whileHTML(cond, exp, syntax, initial, final) {
     
     if (cond.value == 0) {
         return new Rules.While(`WhileEnd`, syntax, "", cond.derivation, 
-                                    exp.derivation, envs);
+                                    exp.derivation, initial, final);
     } else {
         Queue = cond.impcore.concat(exp.impcore).reverse();
         const nextWhile = _WHILE(true, true).derivation;
         return new Rules.While('WhileIterate', syntax, nextWhile, 
-                                cond.derivation, exp.derivation, envs);
+                                cond.derivation, exp.derivation, initial, final);
     }
 }
 
-function whileLatex(cond, exp, envs) {
+function whileLatex(cond, exp, initial, final) {
     if (cond.value == 0) {
         return Latex.WhileLatex('WhileEnd', "", cond, exp, 
-                                `${cond.value} = 0`, envs);
+                                `${cond.value} = 0`, initial, final);
     } else {
         Queue = cond.impcore.concat(exp.impcore).reverse();
         return Latex.WhileLatex(`WhileIterate`, _WHILE(true, false).derivation, 
-                                cond, exp, `${cond.value} \\neq 0`, envs);
+                                cond, exp, `${cond.value} \\neq 0`, initial, final);
     }
 }
 
@@ -510,7 +511,7 @@ function APPLY(funName, execute) {
     let impcore = [funName];
     let value = 0;
     let newRho = {};
-    const rho_1 = JSON.parse(JSON.stringify(rho));
+    const initial = EnvChanges.saveState(html);
     params.forEach(param => {
         const param_derivation = derive(Queue.pop(), execute);
         param_derivation.name = param;
@@ -519,7 +520,9 @@ function APPLY(funName, execute) {
         params_syntax += param_derivation.syntax + ", ";
         impcore = impcore.concat(param_derivation.impcore);
     });
-    const rho_2 = JSON.parse(JSON.stringify(rho));
+    const final = EnvChanges.saveState(html);
+    EnvChanges.beforeFunCall();
+    const rho_2 = JSON.parse(JSON.stringify(rho))
     rho = newRho; //setting the new rho
     params_syntax = params_syntax.substring(0, params_syntax.length - 2);
     if (params_syntax != "") {
@@ -530,9 +533,9 @@ function APPLY(funName, execute) {
         Queue = Queue.concat(funInfo.exp);
         body = derive(Queue.pop(), true);
         value = body.value;
-        let envs = new EnvChanges(xi, phi, rho_1, rho_2)
-        derivation = applyUserDerivation(funName, syntax, params, body, paramsInfo, envs);
+        derivation = applyUserDerivation(funName, syntax, params, body, paramsInfo, initial, final);
     }
+    EnvChanges.afterFunCall(final)
     rho = rho_2; //resetting rho to after all the params were evaluated
     return { 'syntax' : syntax,
              'derivation' : derivation,
@@ -541,10 +544,10 @@ function APPLY(funName, execute) {
             };
 }
 
-function applyUserDerivation(funName, syntax, params, body, paramsInfos, envs) {
+function applyUserDerivation(funName, syntax, params, body, paramsInfos, initial, final) {
     if (html) {
-        return new Rules.ApplyUser(funName, syntax, params, paramsInfos, body, envs);
+        return new Rules.ApplyUser(funName, syntax, params, paramsInfos, body, initial, final);
     } else {
-        return Latex.ApplyUserLatex(funName, syntax, params, body, paramsInfos, envs);
+        return Latex.ApplyUserLatex(funName, syntax, params, body, paramsInfos, initial, final);
     }
 }

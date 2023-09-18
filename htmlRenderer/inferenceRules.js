@@ -152,10 +152,10 @@ class Var extends InferenceRule {
 
 class Begin extends InferenceRule {
 
-    constructor(title, syntax, result, exp_derivations, envs) {
+    constructor(title, syntax, result, exp_derivations, initial, final) {
         exp_derivations.reverse();
         const conditions = new Conditions(exp_derivations, 'column');
-        super(title, conditions, `Begin(${syntax})`, result, envs);
+        super(title, conditions, `Begin(${syntax})`, result, initial, final);
     }
 }
 
@@ -219,14 +219,14 @@ class ApplyUser extends InferenceRule {
         }
         const rhoAndParams = ApplyUser.makeRhoAndParams(paramsInfos);
         const conditionList = [body.derivation, 
-                              HtmlElement.conditionText(`${State.rho} = ${rhoAndParams.rhoMapping}`, 'column')]
+                              HtmlElement.conditionText(`${State.rho}<sub>${initial.count + 1}</sub> = ${rhoAndParams.rhoMapping}`, 'column')]
                               .concat(rhoAndParams.paramsDerivations)
                               .concat([
                                 allDistinctCond,
                                 HtmlElement.conditionText(`${State.rho}(${funName}) = User([${paramsString}], ${body.syntax})`, 'column')
                               ]);
         const conditions = new Conditions(conditionList, 'column');
-        super('ApplyUser', conditions, syntax, body.value, envs);
+        super('ApplyUser', conditions, syntax, body.value, initial, final);
     }
 
     /**
