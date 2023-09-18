@@ -1,4 +1,5 @@
 import HtmlElement from './htmlElement.js';
+import { makeEqString } from '../utilities/symbols.js';
 
 class State extends HtmlElement {
     static xi = 'ξ';
@@ -182,7 +183,8 @@ class Apply extends InferenceRule {
     static neq = '≠';
     constructor(title, syntax, result, condInfo, initial, final) {
         const functionCondition = HtmlElement.conditionText(`${State.phi}(${condInfo.name}) = Primitive(${condInfo.name})`, 'column');
-        let eqText = Apply.makeEqString(condInfo.name, condInfo.exp_1.result, condInfo.exp_2.result, result);
+        let eqText = makeEqString(condInfo.name, condInfo.exp_1.result, condInfo.exp_2.result, result, 
+                                    {leq: Apply.leq, neq: Apply.neq, start_sup: "<sup>", end_sup: "</sup>"});
         const eqString = HtmlElement.conditionText(eqText, 'column');
         const conditions = new Conditions([eqString, condInfo.exp_2, condInfo.exp_1, functionCondition], 'column');
         super(title, conditions, syntax, result, initial, final);
@@ -190,20 +192,6 @@ class Apply extends InferenceRule {
 
     static makeCondInfo(functionName, exp1_element, exp2_element) {
         return {name : functionName, exp_1 : exp1_element, exp_2 : exp2_element};
-    }
-
-    static makeEqString(name, value_1, value_2, result) {
-        if (name == "+" || name == "/" || name == "*" || name == "-" || name == "mod") {
-            return `-2<sup>31</sup> ${Apply.leq} ${value_1} ${name} ${value_2} < 2<sup>31</sup>`;
-        }
-        else if (name == "||" || name == "&&") {
-            return `${value_1} ${name} ${value_2} = ${result}`
-        }
-        else if (name == "=") {
-            return result == 0 ? `${value_1} ${Apply.neq} ${value_2}` : `${value_1} = ${value_2}`
-        } else {
-            return `${value_1} ${name} ${value_2} = ${result}`;
-        }
     }
 }
 

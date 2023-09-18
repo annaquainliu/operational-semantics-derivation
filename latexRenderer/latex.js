@@ -1,4 +1,4 @@
-
+import { makeEqString } from "../utilities/symbols.js";
 /**
  * 
  * @param {String} name : Name of inference rule
@@ -70,7 +70,10 @@ function WhileLatex(title, next_while, condition, exp, eqCondition, initial, fin
                             initial, final);
 }
 
-function ApplyLatex(title, functionName, exp_1, exp_2, eqString, result, initial, final) {
+function ApplyLatex(title, functionName, exp_1, exp_2, result, initial, final) {
+    let eqString = makeEqString(functionName, exp_1.value, exp_2.value, result,
+        {leq: "\\leq", neq: "\\neq", start_sup: "^{", end_sup: "}"})
+
     return baseInferenceRule(title, `${eqString} \\\\\\\\ ${exp_2.derivation} \\\\\\\\ ${exp_1.derivation} \\\\\\\\ \\phi(${functionName}) = \\textsc{Primitive}(${functionName})`,
                             `Apply(${functionName}, ${exp_1.syntax}, ${exp_2.syntax})`,
                             result,

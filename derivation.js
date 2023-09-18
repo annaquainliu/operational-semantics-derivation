@@ -202,44 +202,36 @@ function derive(exp, execute) {
             return _WHILE(execute);
         case "&&":
             return PRIMITIVE(exp, execute, {name : "And",
-                                                   equation : (f, s) => f && s ? 1 : 0,
-                                                   eqString : "$v_1 \\textsc{ \\&\\& } $v_2 = $v_r"});
+                                                   equation : (f, s) => f && s ? 1 : 0});
         case "||":
             return PRIMITIVE(exp, execute, {name : "Or",
-                                                   equation : (f, s) => f || s ? 1 : 0,
-                                                   eqString : "$v_1 \\textsc{ || } $v_2 = $v_r"});
+                                                   equation : (f, s) => f || s ? 1 : 0});
         case "mod":
             return PRIMITIVE(exp, execute, {name : 'Mod',
-                                                   equation: (f, s) => f % s,
-                                                   eqString : "-2^{31} \\leq $v_1 \\textsc{ mod } $v_2 < 2^{31}"})
+                                                   equation: (f, s) => f % s})
         case "+":
             return PRIMITIVE(exp, execute, {name : 'Add', 
-                                                   equation : (f, s) => f + s, 
-                                                   eqString : "-2^{31} \\leq $v_1 + $v_2 < 2^{31}"});
+                                                   equation : (f, s) => f + s});
         case "-":
             return PRIMITIVE(exp, execute, {name : 'Sub', 
-                                                   equation : (f, s) => f - s,
-                                                   eqString : "-2^{31} \\leq $v_1 - $v_2 < 2^{31}"});
+                                                   equation : (f, s) => f - s});
         case "/":
             return PRIMITIVE(exp, execute, {name : 'Div', 
-                                                   equation : (f, s) => Math.floor(f / s),
-                                                   eqString : "-2^{31} \\leq $v_1 / $v_2 < 2^{31}"});
+                                                   equation : (f, s) => Math.floor(f / s)});
         case "*":
             return PRIMITIVE(exp, execute, {name : 'Mult', 
-                                                   equation : (f, s) => f * s,
-                                                   eqString : "-2^{31} \\leq $v_1 * $v_2 < 2^{31}"});
+                                                   equation : (f, s) => f * s});
         case "=":
             return PRIMITIVE(exp, execute, {name : 'Eq', 
-                                                   equation : (f, s) => f == s ? 1 : 0,
-                                                   eqString : "$v_1 ?= $v_2"});
+                                                   equation : (f, s) => f == s ? 1 : 0});
         case ">":
             return PRIMITIVE(exp, execute, {name : 'Gt', 
-                                                   equation : (f, s) => f > s ? 1 : 0,
-                                                   eqString : "$v_1 > $v_2 = $v_r"});
+                                                   equation : (f, s) => f > s ? 1 : 0});
         case "<":
             return PRIMITIVE(exp, execute, {name : 'Lt', 
-                                                    equation : (f, s) => f < s ? 1 : 0,
-                                                    eqString : "$v_1 < $v_2 = $v_r"});
+                                                    equation : (f, s) => f < s ? 1 : 0});
+        case "!=":
+            return PRIMITIVE(exp, execute, {name : "NotEq", equation: (f, s) => f != s ? 1 : 0})
         default:
            return VAR(exp, execute);
     }
@@ -432,17 +424,13 @@ function PRIMITIVE(exp, execute, functionInfo) {
     const second = derive(Queue.pop(), execute);
     const result = functionInfo.equation(first.value, second.value);
     const syntax = `Apply(${html ? exp : symbol}, ${first.syntax}, ${second.syntax})`;
-    let eqString = functionInfo.eqString.replace('$v_1', first.value)
-                                        .replace("$v_2", second.value)
-                                        .replace("$v_r", result);
+   
     if (execute) {
         if (symbol == "=") {
             if (result == 0) {
-                eqString = eqString.replace('?=', '\\neq');
                 title = 'ApplyEqFalse';
                 
             } else {
-                eqString = eqString.replace('?=', '=');
                 title = 'ApplyEqTrue';
             }
         }
@@ -450,8 +438,7 @@ function PRIMITIVE(exp, execute, functionInfo) {
         derivation = html ? new Rules.Apply(title, syntax, result, 
                             Rules.Apply.makeCondInfo(exp, first.derivation, second.derivation),
                             initial, final)
-                          : Latex.ApplyLatex(title, symbol, first, second,
-                                             eqString, result, initial, final);
+                          : Latex.ApplyLatex(title, symbol, first, second, result, initial, final);
     }
     return {"syntax" : syntax,
             "value" : result,
