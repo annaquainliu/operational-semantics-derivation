@@ -1,60 +1,69 @@
 
+
 /**
- * 
- * @param {String} env : Either "xi", "rho", "ksee"
- * @param {JSON} obj : Either names -> Int, or names -> {parameters: [String], exp: String} 
- * @param {Syntax} syntax 
- * @returns 
+ * Static class that records the changes of environments rho and xi
  */
-function translateEnvIntoWords(env, obj, syntax) {
-    let string = "";
-    if (env == "rho" || env == "xi") {
-        if (env == "rho") [
-            string += `${syntax.rho} = ${syntax.startBracket}`
-        ] 
-        else {
-            string += `${syntax.xi} = ${syntax.startBracket}`
-        } 
-        let names = Object.keys(obj);
-        for (let i = 0; i < names.length; i++) {
-            string += names[i] + ` ${syntax.mapsTo} ` + obj[names[i]] + ", ";
+class EnvChanges {
+    static rho_changes = ""
+    static xi_changes = ""
+    static rho_count = 0
+
+    static reset() {
+        EnvChanges.rho_changes = ""
+        EnvChanges.xi_changes = ""
+        EnvChanges.rho_count = 0
+    }
+
+    static get latex_rho() {
+        if (EnvChanges.rho_count == 0) {
+            return EnvChanges.rho_changes
         }
-    } 
-    else {
-        string += `${syntax.phi} = ${syntax.startBracket}`
-        let names = Object.keys(obj);
-        for (let i = 0; i < names.length; i++) {
-            const fun_name = names[i];
-            const params = obj[fun_name].parameters;
-            let param_string = "";
-            if (params.length == 1) {
-                param_string += params[0];
-            }
-            else if (params.length > 1) {
-                param_string = `${params[0]}...${params[params.length - 1]}`;
-            }
-            string += `${fun_name} ${syntax.mapsTo} (${syntax.langle}${param_string}${syntax.rangle}, e${syntax.startSub}${fun_name}${syntax.endSub}), `;
+        return `_{${EnvChanges.rho_count}}${EnvChanges.rho_changes}`;
+    }
+
+    static get html_rho() {
+        if (EnvChanges.rho_count == 0) {
+            return EnvChanges.rho_changes
+        }
+        return `<sub>${EnvChanges.rho_count}</sub>${EnvChanges.rho_changes}`;
+    }
+
+    static get xi() {
+        return EnvChanges.xi_changes
+    }
+
+    static saveState(html) {
+        if (html) {
+            return {rho : EnvChanges.html_rho, xi: EnvChanges.xi};
+        } 
+        else {
+            return {rho : EnvChanges.latex_rho, xi: EnvChanges.xi};
         }
     }
-    string = string.slice(0, -2);
-    string += syntax.endBracket;
-    return string;
-}
 
-class EnvChanges {
+    static beforeFunCall() {
+        EnvChanges.rho_changes = ""
+        EnvChanges.rho_count++;
+    }
 
+    static afterFunCall(beforeChanges) {
+        EnvChanges.rho_changes = beforeChanges
+    }
     /**
      * 
-     * @param {JSON} xi 
-     * @param {JSON} phi 
-     * @param {JSON} rho_1 : represents the initial rho
-     * @param {JSON} rho_2 : represents the final rho
+     * @param {String} env : Either "xi", "rho", "ksee"
+     * @param {String} name : Name of the variable
+     * @param {Int} value : value of the variable
+     * @param {Syntax} syntax 
      */
-    constructor(xi, phi, rho_1, rho_2) {
-        this.xi = xi;
-        this.phi = phi;
-        this.rho_1 = rho_1;
-        this.rho_2 = rho_2;
+    static addMapToEnv(env, name, value, syntax) {
+        let string = `${syntax.startBracket} ${name} ${syntax.mapsTo} ${value}`;
+        if (env == "rho") [
+            EnvChanges.rho_changes += string 
+        ] 
+        else {
+            EnvChanges.xi_changes += string
+        } 
     }
 }
 
@@ -63,27 +72,21 @@ class Syntax {
      * 
      * @param {String} startBracket 
      * @param {String} endBracket 
-     * @param {String} xi 
-     * @param {String} rho 
-     * @param {String} phi 
      * @param {String} mapsTo 
-     * @param {String} startSub 
-     * @param {String} endSub 
-     * @param {String} langle
-     * @param {String} rangle
      */
-    constructor(startBracket, endBracket, xi, rho, phi, mapsTo, startSub, endSub, langle, rangle) {
+    constructor(startBracket, endBracket, mapsTo) {
         this.startBracket = startBracket;
         this.endBracket = endBracket;
-        this.xi = xi;
-        this.rho = rho;
-        this.phi = phi;
         this.mapsTo = mapsTo;
-        this.startSub = startSub;
-        this.endSub = endSub;
-        this.langle = langle;
-        this.rangle = rangle;
+    }
+
+    static latexSyntax() {
+        return new Syntax("\\{", "\\}", "\\mapsto");
+    }
+
+    static htmlSyntax() {
+        return new Syntax("{", "}", "→");
     }
 }
 
-export default {translateEnvIntoWords, Syntax: Syntax, EnvChanges: EnvChanges};
+export {Syntax, EnvChanges}

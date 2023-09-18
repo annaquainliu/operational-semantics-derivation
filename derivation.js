@@ -6,7 +6,7 @@ const HtmlOutput = document.getElementById('HTMLOutput');
 import HtmlElement from './htmlRenderer/htmlElement.js';
 import Latex from './latexRenderer/latex.js';
 import Rules from './htmlRenderer/inferenceRules.js';
-import {EnvChanges} from './utilities/environment.js'
+import {EnvChanges, Syntax} from './utilities/environment.js'
 
 HtmlOutput.style.fontSize = HtmlElement.fontSize;
 
@@ -74,8 +74,8 @@ function addSpecificEnv(env, lambda) {
         alert("Ill-formed Impcore expression");
         return;
     }
+    EnvChanges.reset();
     addVariablesToEnv(); //add variables
-    Stack = [];
     Queue = addValuesToQueue(value); //add values to queue
     HtmlOutput.style.scale = '1'; //reset html output scale to 1
     html = button.getAttribute('id') == 'deriveHTML';
@@ -91,6 +91,7 @@ function addSpecificEnv(env, lambda) {
             document.getElementById("output").style.display = 'block';
         }
     } catch ({name, message}) {
+        console.log(message)
         if (message == "Nested derivation is too deep.") {
             alert(`The derivation has over the max amount of layers (${numberDerivationsCap}).`);
         } else {
@@ -299,7 +300,7 @@ function VAR(name, execute) {
         else {
            title = "GlobalVar"
         }
-        let envs = EnvChanges(xi, phi, rho, rho);
+        let envs = new EnvChanges(xi, phi, rho, rho);
         derivation = html ? new Rules.Var(title, variable.env, name, variable.value, envs) 
                             : Latex.VarLatex(title, name, variable.env, `${variable.value}`, envs);
     }
@@ -327,7 +328,7 @@ function IF(execute) {
     }
      //ticks obj is changed by reference
     if (execute) {
-        let envs = EnvChanges(xi, phi, rho_1, rho)
+        let envs = new EnvChanges(xi, phi, rho_1, rho)
         derivation = html ? ifHTML(title, syntax, condition, branch, envs)
                           : ifLatex(title, condition, syntax, branch, envs);
     }
@@ -367,7 +368,7 @@ function SET(execute) {
     if (execute) {
         let environment = {"rho" : rho, "xi" : xi};
         environment[env][variable.name] = exp.value;
-        let envs = EnvChanges(xi, phi, rho_1, rho);
+        let envs = new EnvChanges(xi, phi, rho_1, rho);
         let title = env == "xi" ? 'GlobalAssign' : 'FormalAssign';
         derivation = html ? setHTML(env, title, syntax, variable, exp, envs)
                           : setLatex(env, title, exp, variable, envs)
@@ -404,7 +405,7 @@ function BEGIN(exp, execute) {
     exps_syntax = exps_syntax.substring(0, exps_syntax.length - 2);
     const syntax = exps_syntax;
     if (execute) {
-        let envs = EnvChanges(xi, phi, rho_1, rho);
+        let envs = new EnvChanges(xi, phi, rho_1, rho);
         if (n_amnt == 0) {
             derivation = html ? new Rules.Begin('EmptyBegin', syntax, 0, exps_derivations, envs)
                               : Latex.BeginLatex('EmptyBegin', " \\ ", syntax, 0, envs);
@@ -444,7 +445,7 @@ function PRIMITIVE(exp, execute, functionInfo) {
                 title = 'ApplyEqTrue';
             }
         }
-        const envs = EnvChanges(xi, phi, rho_1, rho);
+        const envs = new EnvChanges(xi, phi, rho_1, rho);
         derivation = html ? new Rules.Apply(title, syntax, result, 
                             Rules.Apply.makeCondInfo(exp, first.derivation, second.derivation),
                             envs)
@@ -465,7 +466,7 @@ function _WHILE(execute) {
     const syntax = `While(${cond.syntax}, ${exp.syntax})`;
     const beforeQueue = Queue;
     if (execute) {
-        let envs = EnvChanges(xi, phi, rho_1, rho)
+        let envs = new (xi, phi, rho_1, rho)
         derivation = html ? whileHTML(cond, exp, syntax, envs)
                           : whileLatex(cond, exp, envs);
     } 
@@ -529,7 +530,7 @@ function APPLY(funName, execute) {
         Queue = Queue.concat(funInfo.exp);
         body = derive(Queue.pop(), true);
         value = body.value;
-        let envs = EnvChanges(xi, phi, rho_1, rho_2)
+        let envs = new EnvChanges(xi, phi, rho_1, rho_2)
         derivation = applyUserDerivation(funName, syntax, params, body, paramsInfo, envs);
     }
     rho = rho_2; //resetting rho to after all the params were evaluated
