@@ -392,7 +392,7 @@ function BEGIN(exp, execute) {
         expression = derive(Queue.pop(), execute);
         exps_syntax += expression.syntax + ", ";
         html ? exps_derivations.push(expression.derivation) : 
-               exps_derivations = "  \\\\\\\\ " + expression.derivation + exps_derivations;
+               exps_derivations += "  \\\\\\\\ " + expression.derivation;
         impcore = impcore.concat(expression.impcore);
     }
     exps_syntax = exps_syntax.substring(0, exps_syntax.length - 2);

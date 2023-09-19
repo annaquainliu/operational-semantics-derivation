@@ -154,7 +154,6 @@ class Var extends InferenceRule {
 class Begin extends InferenceRule {
 
     constructor(title, syntax, result, exp_derivations, initial, final) {
-        exp_derivations.reverse();
         const conditions = new Conditions(exp_derivations, 'column');
         super(title, conditions, `Begin(${syntax})`, result, initial, final);
     }
