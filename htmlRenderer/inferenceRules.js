@@ -205,7 +205,7 @@ class ApplyUser extends InferenceRule {
             allDistinctCond = HtmlElement.conditionText(`${paramsString} all distinct`, 'column');
         }
         const rhoAndParams = ApplyUser.makeRhoAndParams(paramsInfos);
-        const conditionList = [HtmlElement.conditionText(`${State.rho}(${funName}) = User([${paramsString}], ${body.syntax})`, 'column'),
+        const conditionList = [HtmlElement.conditionText(`${State.phi}(${funName}) = User([${paramsString}], ${body.syntax})`, 'column'),
                                 allDistinctCond]
                                 .concat(rhoAndParams.paramsDerivations)
                                 .concat([HtmlElement.conditionText(`${State.rho}<sub>${initial.count + 1}</sub> = ${rhoAndParams.rhoMapping}`, 'column'),
