@@ -74,7 +74,7 @@ function ApplyLatex(title, functionName, exp_1, exp_2, result, initial, final) {
     let eqString = makeEqString(functionName, exp_1.value, exp_2.value, result,
         {leq: "\\leq", neq: "\\neq", start_sup: "^{", end_sup: "}"})
 
-    return baseInferenceRule(title, `${eqString} \\\\\\\\ ${exp_2.derivation} \\\\\\\\ ${exp_1.derivation} \\\\\\\\ \\phi(${functionName}) = \\textsc{Primitive}(${functionName})`,
+    return baseInferenceRule(title, `\\phi(${functionName}) = \\textsc{Primitive}(${functionName}) \\\\\\\\ ${exp_1.derivation} \\\\\\\\ ${exp_2.derivation} \\\\\\\\ ${eqString}`,
                             `Apply(${functionName}, ${exp_1.syntax}, ${exp_2.syntax})`,
                             result,
                             initial, final);
@@ -96,12 +96,12 @@ function ApplyUserLatex(funcName, syntax, paramNames, exp, paramsInfo, initial, 
     let paramsDerivations = "";
     let mapping = " \\{";
     for (let i = 0; i < paramsInfo.length; i++) {
-        paramsDerivations = `\\\\\\\\ ${paramsInfo[i].derivation}` + paramsDerivations;
+        paramsDerivations += `\\\\\\\\ ${paramsInfo[i].derivation}`;
         mapping += ` ${paramsInfo[i].name} \\mapsto ${paramsInfo[i].value},`;
     }
     mapping = mapping.substring(0, mapping.length - 1) + "\\}";
     return baseInferenceRule('ApplyUser',
-                            `${exp.derivation}  \\\\\\\\  \\rho_{${initial.count + 1}} = ${mapping} ${paramsDerivations} \\\\\\\\ ${paramsString} \\text{ all distinct} \\\\\\\\ \\phi(\\textsc{${funcName}}) = \\textsc{User}(\\langle \\textsc{${paramsString}} \\rangle, \\textsc{${exp.syntax}})`,
+                            `\\phi(\\textsc{${funcName}}) = \\textsc{User}(\\langle \\textsc{${paramsString}} \\rangle, \\textsc{${exp.syntax}}) \\\\\\\\ ${paramsString} \\text{ all distinct} \\\\\\\\  \\rho_{${initial.count + 1}} = ${mapping} ${paramsDerivations} \\\\\\\\ ${exp.derivation}`,
                             syntax,
                             exp.value,
                             initial, final);

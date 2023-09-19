@@ -185,7 +185,7 @@ class Apply extends InferenceRule {
         let eqText = makeEqString(condInfo.name, condInfo.exp_1.result, condInfo.exp_2.result, result, 
                                     {leq: Apply.leq, neq: Apply.neq, start_sup: "<sup>", end_sup: "</sup>"});
         const eqString = HtmlElement.conditionText(eqText, 'column');
-        const conditions = new Conditions([eqString, condInfo.exp_2, condInfo.exp_1, functionCondition], 'column');
+        const conditions = new Conditions([functionCondition, condInfo.exp_1, condInfo.exp_2, eqString], 'column');
         super(title, conditions, syntax, result, initial, final);
     }   
 
@@ -205,13 +205,11 @@ class ApplyUser extends InferenceRule {
             allDistinctCond = HtmlElement.conditionText(`${paramsString} all distinct`, 'column');
         }
         const rhoAndParams = ApplyUser.makeRhoAndParams(paramsInfos);
-        const conditionList = [body.derivation, 
-                              HtmlElement.conditionText(`${State.rho}<sub>${initial.count + 1}</sub> = ${rhoAndParams.rhoMapping}`, 'column')]
-                              .concat(rhoAndParams.paramsDerivations)
-                              .concat([
-                                allDistinctCond,
-                                HtmlElement.conditionText(`${State.rho}(${funName}) = User([${paramsString}], ${body.syntax})`, 'column')
-                              ]);
+        const conditionList = [HtmlElement.conditionText(`${State.rho}(${funName}) = User([${paramsString}], ${body.syntax})`, 'column'),
+                                allDistinctCond]
+                                .concat(rhoAndParams.paramsDerivations)
+                                .concat([HtmlElement.conditionText(`${State.rho}<sub>${initial.count + 1}</sub> = ${rhoAndParams.rhoMapping}`, 'column'),
+                                body.derivation])
         const conditions = new Conditions(conditionList, 'column');
         super('ApplyUser', conditions, syntax, body.value, initial, final);
     }
