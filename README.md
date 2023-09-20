@@ -55,6 +55,3 @@ Image of Latex Output:
 
 Image of HTML Output:
 <img width="1439" alt="Screenshot 2023-09-18 at 6 50 27 PM" src="https://github.com/annaquainliu/operational-semantics-derivation/assets/103337005/788955d3-56aa-4767-a6d7-f69c342a5aa3">
-
-## How to Read Opsem
-The conditions for the all of rules are read from bottom to the top.
